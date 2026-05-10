@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Cashier Report - {{ block.super }}{% endblock %}
+{% block page_title %}Cashier Report{% endblock %}
+{% block content %}
+<div class="search-bar">
+    <form method="get" style="display:flex;gap:0.75rem;align-items:center;">
+        <input type="date" name="date_from" class="form-input" value="{{ date_from|date:'Y-m-d' }}">
+        <input type="date" name="date_to" class="form-input" value="{{ date_to|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> View</button>
+        <a href="{% url 'reports:reports_index' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="fas fa-users"></i> Cashier Performance</div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>Cashier</th><th>Sales Count</th><th>Total Sales</th></tr></thead>
+            <tbody>
+                {% for cashier in cashiers %}
+                <tr>
+                    <td><strong>{{ cashier.cashier__username }}</strong></td>
+                    <td>{{ cashier.count }}</td>
+                    <td>{{ site_settings.currency }} {{ cashier.total_sales|floatformat:0 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" style="text-align:center;">No sales in this period.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

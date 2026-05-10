@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Point of Sale - {{ block.super }}{% endblock %}
+{% block page_title %}Point of Sale{% endblock %}
+{% block content %}
+<div class="pos-container">
+    <div>
+        <div class="search-bar">
+            <input type="text" id="productSearch" class="form-input" placeholder="Search products..." style="max-width:100%;">
+            <select id="categoryFilter" class="form-select">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.category__name }}">{{ cat.category__name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="pos-products" id="productGrid">
+            {% for product in products %}
+            <div class="pos-product" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.selling_price }}" data-stock="{{ product.quantity }}" data-category="{{ product.category.name }}" data-unit="{{ product.unit_type }}" data-per-crate="{{ product.units_per_crate }}" data-crates="{{ product.crate_quantity }}" data-per-pack="{{ product.units_per_pack }}" data-packs="{{ product.pack_quantity }}" data-bottles="{{ product.bottle_quantity }}" data-shots-per-bottle="{{ product.shots_per_bottle }}" data-shot-quantity="{{ product.shot_quantity }}">
+                <div class="name">{{ product.name }}</div>
+                <div class="price">{{ site_settings.currency }} {{ product.selling_price|floatformat:0 }}</div>
+                <div class="stock">
+                    {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                    Stock: {{ product.crate_quantity }} Crates ({{ product.quantity }} Bottles)
+                    {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                    Stock: {{ product.pack_quantity }} Packs ({{ product.quantity }} Bottles/Cans)
+                    {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                    Stock: {{ product.bottle_quantity }} Bottles ({{ product.quantity }} Shots)
+                    {% else %}
+                    Stock: {{ product.quantity }}
+                    {% endif %}
+                </div>
+                {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                    <span class="badge badge-info">1 Crate = {{ product.units_per_crate }} Bottles</span>
+                </div>
+                {% endif %}
+                {% if product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                    <span class="badge badge-info">1 Pack = {{ product.units_per_pack }} Bottles/Cans</span>
+                </div>
+                {% endif %}
+                {% if product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                    <span class="badge badge-info">1 Bottle = {{ product.shots_per_bottle }} Shots</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="pos-cart">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-shopping-cart"></i> Cart</div>
+            <div class="card-body">
+                <div class="cart-items" id="cartItems"></div>
+                <div class="cart-total">
+                    <div class="row"><span>Subtotal</span><span id="subtotal">MK 0.00</span></div>
+                    <div class="row" style="font-weight:700;font-size:1.1rem;"><span>Total</span><span id="total">MK 0.00</span></div>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="paymentMethod" class="form-select">
+                        <option value="cash">Cash</option>
+                        <option value="airtel_money">Airtel Money</option>
+                        <option value="tnm_mpamba">TNM Mpamba</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount Paid</label>
+                    <input type="number" id="amountPaid" class="form-input" value="0" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Change Due</label>
+                    <div id="changeDue" style="font-size:1.3rem;font-weight:700;color:var(--success);">MK 0.00</div>
+                </div>
+                <button id="checkoutBtn" class="btn btn-success btn-lg" style="width:100%;justify-content:center;" disabled>
+                    <i class="fas fa-check"></i> Complete Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+var cart = [];
+var products = {};
+{% for product in products %}
+products[{{ product.id }}] = {
+    name: '{{ product.name|escapejs }}',
+    price: {{ product.selling_price }},
+    stock: {{ product.quantity }},
+    unitType: '{{ product.unit_type }}',
+    perCrate: {{ product.units_per_crate }},
+    crates: {{ product.crate_quantity }},
+    perPack: {{ product.units_per_pack }},
+    packs: {{ product.pack_quantity }},
+    shotsPerBottle: {{ product.shots_per_bottle }},
+    shots: {{ product.shot_quantity }},
+    bottles: {{ product.bottle_quantity }},
+    sellingUnit: '{{ product.selling_unit }}'
+};
+{% endfor %}
+
+document.querySelectorAll('.pos-product').forEach(function(el) {
+    el.addEventListener('click', function() {
+        var id = parseInt(this.dataset.id);
+        addToCart(id);
+    });
+});
+
+function addToCart(id) {
+    var p = products[id];
+    var existing = cart.find(function(item) { return item.id === id; });
+    if (existing) {
+        existing.qty++;
+    } else {
+        var unit = p.sellingUnit;
+        cart.push({
+            id: id,
+            name: p.name,
+            price: p.price,
+            qty: 1,
+            stock: p.stock,
+            unitType: p.unitType,
+            perCrate: p.perCrate,
+            sellingUnit: unit
+        });
+    }
+    renderCart();
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(function(item) { return item.id !== id; });
+    renderCart();
+}
+
+function updateQty(id, qty) {
+    var item = cart.find(function(i) { return i.id === id; });
+    if (!item) return;
+    qty = parseInt(qty);
+    if (qty <= 0) { removeFromCart(id); return; }
+    var perUnit = item.sellingUnit === 'Crate' ? item.perCrate : (item.sellingUnit === 'Pack' ? item.perPack : 1);
+    var bottleQty = qty * perUnit;
+    if (bottleQty > item.stock) {
+        var maxBottle = item.stock;
+        var maxQty = perUnit > 1 ? Math.floor(maxBottle / perUnit) : maxBottle;
+        alert('Not enough stock! Max ' + maxQty + ' ' + item.sellingUnit + (maxQty > 1 ? 's' : ''));
+        qty = maxQty;
+    }
+    if (qty <= 0) { removeFromCart(id); return; }
+    item.qty = qty;
+    renderCart();
+}
+
+function toggleUnit(id) {
+    var item = cart.find(function(i) { return i.id === id; });
+    if (!item) return;
+    if (item.unitType === 'Crate') {
+        var newUnit = item.sellingUnit === 'Bottle' ? 'Crate' : 'Bottle';
+        var bottlesUsed = item.sellingUnit === 'Crate' ? item.qty * item.perCrate : item.qty;
+        if (newUnit === 'Crate') {
+            var newQty = Math.floor(bottlesUsed / item.perCrate);
+            if (newQty === 0) { alert('Not enough bottles for 1 crate (' + item.perCrate + ' needed)'); return; }
+            item.qty = newQty;
+        } else {
+            item.qty = bottlesUsed;
+        }
+        item.sellingUnit = newUnit;
+    } else if (item.unitType === 'Pack') {
+        var newUnit = item.sellingUnit === 'Bottle/Can' ? 'Pack' : 'Bottle/Can';
+        var bottlesUsed = item.sellingUnit === 'Pack' ? item.qty * item.perPack : item.qty;
+        if (newUnit === 'Pack') {
+            var newQty = Math.floor(bottlesUsed / item.perPack);
+            if (newQty === 0) { alert('Not enough bottles/cans for 1 pack (' + item.perPack + ' needed)'); return; }
+            item.qty = newQty;
+        } else {
+            item.qty = bottlesUsed;
+        }
+        item.sellingUnit = newUnit;
+    } else if (item.unitType === 'Bottle' && item.shotsPerBottle > 1) {
+        var newUnit = item.sellingUnit === 'Shot' ? 'Bottle' : 'Shot';
+        var shotsUsed = item.sellingUnit === 'Bottle' ? item.qty * item.shotsPerBottle : item.qty;
+        if (newUnit === 'Bottle') {
+            var newQty = Math.floor(shotsUsed / item.shotsPerBottle);
+            if (newQty === 0) { alert('Not enough shots for 1 bottle (' + item.shotsPerBottle + ' needed)'); return; }
+            item.qty = newQty;
+        } else {
+            item.qty = shotsUsed;
+        }
+        item.sellingUnit = newUnit;
+    }
+    renderCart();
+}
+
+function renderCart() {
+    var container = document.getElementById('cartItems');
+    var subtotal = 0;
+    var html = '';
+    cart.forEach(function(item) {
+        var effPrice = item.sellingUnit === 'Shot' ? (item.price / item.shotsPerBottle) : item.price;
+        var total = effPrice * item.qty;
+        subtotal += total;
+        var unitLabel = item.sellingUnit;
+    var perUnit = item.sellingUnit === 'Crate' ? item.perCrate : (item.sellingUnit === 'Pack' ? item.perPack : (item.sellingUnit === 'Bottle' && item.shotsPerBottle > 1 ? item.shotsPerBottle : 1));
+        var bottleQty = item.qty * perUnit;
+        var displayPrice = item.sellingUnit === 'Shot' ? (item.price / item.shotsPerBottle) : item.price;
+        html += '<div class="cart-item">' +
+            '<div><strong>' + item.name + '</strong><br>MK ' + displayPrice.toFixed(2) + ' / ' + unitLabel;
+        if (item.unitType === 'Crate' && item.perCrate > 1) {
+            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' bottles</span>';
+            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Bottle' ? 'Crate' : 'Bottle') + '</button>';
+        }
+        if (item.unitType === 'Pack' && item.perPack > 1) {
+            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' bottles/cans</span>';
+            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Bottle/Can' ? 'Pack' : 'Bottle/Can') + '</button>';
+        }
+        if (item.unitType === 'Bottle' && item.shotsPerBottle > 1) {
+            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' shots</span>';
+            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Shot' ? 'Bottle' : 'Shot') + '</button>';
+        }
+        html += '</div>' +
+            '<div class="cart-item-qty">' +
+            '<button class="btn btn-sm btn-outline" onclick="updateQty(' + item.id + ',' + (item.qty - 1) + ')">-</button>' +
+            '<input type="number" value="' + item.qty + '" min="1" onchange="updateQty(' + item.id + ', this.value)">' +
+            '<button class="btn btn-sm btn-outline" onclick="updateQty(' + item.id + ',' + (item.qty + 1) + ')">+</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="removeFromCart(' + item.id + ')"><i class="fas fa-times"></i></button>' +
+            '</div>' +
+            '<div><strong>MK ' + total.toFixed(2) + '</strong></div>' +
+            '</div>';
+    });
+    if (cart.length === 0) {
+        html = '<p class="text-muted" style="text-align:center;">Cart is empty. Click products to add.</p>';
+    }
+    container.innerHTML = html;
+
+    document.getElementById('subtotal').textContent = 'MK ' + subtotal.toFixed(2);
+    document.getElementById('total').textContent = 'MK ' + subtotal.toFixed(2);
+    document.getElementById('checkoutBtn').disabled = cart.length === 0;
+    calcChange();
+}
+
+function calcChange() {
+    var total = 0;
+    cart.forEach(function(item) { total += item.price * item.qty; });
+    var paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    var change = Math.max(0, paid - total);
+    document.getElementById('changeDue').textContent = 'MK ' + change.toFixed(2);
+}
+
+document.getElementById('amountPaid').addEventListener('input', calcChange);
+
+document.getElementById('checkoutBtn').addEventListener('click', function() {
+    if (cart.length === 0) return;
+    var items = cart.map(function(item) {
+        return {
+            product_id: item.id,
+            quantity: item.qty,
+            selling_unit: item.sellingUnit
+        };
+    });
+    var paymentMethod = document.getElementById('paymentMethod').value;
+    var amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+
+    fetch('{% url "sales:create_sale" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ items: items, payment_method: paymentMethod, amount_paid: amountPaid })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.href = '{% url "sales:sale_receipt" 0 %}'.replace('0', data.sale_id);
+        } else {
+            alert(data.error || 'Sale failed');
+        }
+    })
+    .catch(function(err) { alert('Error: ' + err); });
+});
+
+document.getElementById('productSearch').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.pos-product').forEach(function(el) {
+        var name = el.dataset.name.toLowerCase();
+        el.style.display = name.includes(q) ? '' : 'none';
+    });
+});
+
+document.getElementById('categoryFilter').addEventListener('change', function() {
+    var cat = this.value;
+    document.querySelectorAll('.pos-product').forEach(function(el) {
+        el.style.display = (!cat || el.dataset.category === cat) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

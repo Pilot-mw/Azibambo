@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Low Stock Report - {{ block.super }}{% endblock %}
+{% block page_title %}Low Stock Report{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="fas fa-exclamation-triangle" style="color:var(--warning);"></i> Low Stock Products</div>
+    <div class="card-body">
+        {% if products %}
+            <table>
+                <thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>Current Stock</th><th>Reorder Level</th><th>Action</th></tr></thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td>{{ product.category.name }}</td>
+                        <td><span class="badge badge-info">{{ product.unit_type }}</span></td>
+                        <td>
+                            {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                            <span class="badge badge-danger">{{ product.crate_quantity }} Crates ({{ product.quantity }} Bottles)</span>
+                            {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                            <span class="badge badge-danger">{{ product.pack_quantity }} Packs ({{ product.quantity }} Bottles/Cans)</span>
+                            {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                            <span class="badge badge-danger">{{ product.bottle_quantity }} Bottles ({{ product.quantity }} Shots)</span>
+                            {% else %}
+                            <span class="badge badge-danger">{{ product.quantity }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ product.reorder_level }}</td>
+                        <td><a href="{% url 'inventory:product_edit' product.id %}" class="btn btn-info btn-sm"><i class="fas fa-edit"></i> Update</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+        <p>No low stock products. All inventory levels are healthy.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

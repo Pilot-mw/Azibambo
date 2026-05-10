@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard - {{ block.super }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ daily_sales|floatformat:0 }}</h3>
+            <p>Today's Sales ({{ daily_sales_count }})</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ weekly_sales|floatformat:0 }}</h3>
+            <p>Weekly Sales</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-calendar"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ monthly_sales|floatformat:0 }}</h3>
+            <p>Monthly Sales ({{ monthly_sales_count }})</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ today_expenses|floatformat:0 }}</h3>
+            <p>Today's Expenses</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow"><i class="fas fa-box"></i></div>
+        <div class="stat-info">
+            <h3>{{ total_products }}</h3>
+            <p>Active Products</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon indigo"><i class="fas fa-warehouse"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ stock_value|floatformat:0 }}</h3>
+            <p>Stock Value</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-fire"></i> Top Selling Products</div>
+        <div class="card-body">
+            {% if top_selling %}
+            <table>
+                <thead><tr><th>Product</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+                <tbody>
+                {% for item in top_selling %}
+                <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.total_qty }}</td>
+                    <td>{{ site_settings.currency }} {{ item.total_revenue|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No sales data yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-clock"></i> Recent Sales</span>
+            <a href="{% url 'sales:sale_history' %}" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="card-body">
+            {% if recent_sales %}
+            <table>
+                <thead><tr><th>Receipt</th><th>Cashier</th><th>Total</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for sale in recent_sales %}
+                <tr>
+                    <td><a href="{% url 'sales:sale_detail' sale.id %}">{{ sale.receipt_number }}</a></td>
+                    <td>{{ sale.cashier.username }}</td>
+                    <td>{{ site_settings.currency }} {{ sale.total|floatformat:0 }}</td>
+                    <td>{{ sale.created_at|time:"H:i" }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No recent sales.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-table" style="color:var(--ss-orange, #f97316);"></i> Today's Stock Sheet</span>
+            <a href="{% url 'inventory:stock_sheet' %}" class="btn btn-outline btn-sm">View</a>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin:0;">
+                <div class="stat-info"><h3>{{ ss_total_sold }}</h3><p>Items Sold</p></div>
+                <div class="stat-info"><h3>{{ site_settings.currency }} {{ ss_total_revenue|floatformat:0 }}</h3><p>Revenue</p></div>
+                <div class="stat-info"><h3>{{ ss_total_remaining }}</h3><p>Remaining</p></div>
+            </div>
+            {% if ss_best_items %}
+            <table style="margin-top:0.75rem;">
+                <thead><tr><th>Item</th><th>Sold</th><th>Revenue</th></tr></thead>
+                <tbody>
+                {% for item in ss_best_items %}
+                <tr>
+                    <td>{{ item.item__name }}</td>
+                    <td>{{ item.total_sold }}</td>
+                    <td>{{ site_settings.currency }} {{ item.total_revenue|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if low_stock_products %}
+<div class="card">
+    <div class="card-header">
+        <span><i class="fas fa-exclamation-triangle" style="color:var(--warning);"></i> Low Stock Products</span>
+        <a href="{% url 'reports:low_stock_report' %}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>Product</th><th>Category</th><th>Stock</th><th>Reorder Level</th></tr></thead>
+            <tbody>
+            {% for product in low_stock_products %}
+            <tr>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category.name }}</td>
+                <td>
+                    {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                    <span class="badge badge-danger">{{ product.crate_quantity }} Crates ({{ product.quantity }} Bottles)</span>
+                    {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                    <span class="badge badge-danger">{{ product.pack_quantity }} Packs ({{ product.quantity }} Bottles/Cans)</span>
+                    {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                    <span class="badge badge-danger">{{ product.bottle_quantity }} Bottles ({{ product.quantity }} Shots)</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ product.quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ product.reorder_level }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% if sales_data %}
+<div class="card">
+    <div class="card-header"><i class="fas fa-chart-line"></i> 30-Day Sales Trend</div>
+    <div class="card-body">
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+var ctx = document.getElementById('salesChart');
+if (ctx) {
+    ctx = ctx.getContext('2d');
+    var salesData = {{ sales_data|safe }};
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: salesData.map(function(d) { return d.date; }),
+            datasets: [{
+                label: 'Sales ({{ site_settings.currency }})',
+                data: salesData.map(function(d) { return d.total; }),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+</script>
+{% endblock %}

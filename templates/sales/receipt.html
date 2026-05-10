@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Receipt {{ sale.receipt_number }} - {{ block.super }}{% endblock %}
+{% block page_title %}Sale Receipt{% endblock %}
+{% block content %}
+<div class="receipt" id="receipt">
+    <div class="receipt-header">
+        <h3>{% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</h3>
+        {% if site_settings.business_tagline %}<p>{{ site_settings.business_tagline }}</p>{% endif %}
+        {% if site_settings.business_address %}<p>{{ site_settings.business_address }}</p>{% endif %}
+        {% if site_settings.business_phone %}<p>{{ site_settings.business_phone }}</p>{% endif %}
+        <hr class="receipt-divider">
+        <p><strong>Receipt:</strong> {{ sale.receipt_number }}</p>
+        <p><strong>Date:</strong> {{ sale.created_at|date:'d M Y H:i' }}</p>
+        <p><strong>Cashier:</strong> {{ sale.cashier.get_full_name|default:sale.cashier.username }}</p>
+    </div>
+    <hr class="receipt-divider">
+    {% for item in sale.items.all %}
+    <div class="receipt-item">
+        <span>{{ item.product_name }} x{{ item.quantity }} {{ item.selling_unit|default:'Bottle' }}</span>
+        <span>{{ site_settings.currency }} {{ item.subtotal|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+    <hr class="receipt-divider">
+    <div class="receipt-item"><span>Subtotal</span><span>{{ site_settings.currency }} {{ sale.subtotal|floatformat:2 }}</span></div>
+    <div class="receipt-total"><span>Total</span><span>{{ site_settings.currency }} {{ sale.total|floatformat:2 }}</span></div>
+    <div class="receipt-item"><span>Paid</span><span>{{ site_settings.currency }} {{ sale.amount_paid|floatformat:2 }}</span></div>
+    <div class="receipt-item"><span>Change</span><span>{{ site_settings.currency }} {{ sale.change_due|floatformat:2 }}</span></div>
+    <hr class="receipt-divider">
+    <div class="receipt-footer">
+        <p>{{ site_settings.receipt_footer|default:'Thank you for your patronage!' }}</p>
+    </div>
+</div>
+<div style="text-align:center;margin-top:1rem;display:flex;gap:0.75rem;justify-content:center;">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print</button>
+    <a href="{% url 'sales:sale_detail' sale.id %}" class="btn btn-outline"><i class="fas fa-info-circle"></i> Details</a>
+    <a href="{% url 'sales:pos' %}" class="btn btn-success"><i class="fas fa-plus"></i> New Sale</a>
+</div>
+<style>
+@media print {
+    .sidebar, .navbar, .page-header, div[style*="display:flex"] { display: none !important; }
+    .page-content { padding: 0; }
+    .receipt { box-shadow: none; border: none; padding: 0; }
+}
+</style>
+{% endblock %}

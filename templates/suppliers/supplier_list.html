@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Suppliers - {{ block.super }}{% endblock %}
+{% block page_title %}Suppliers{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span><i class="fas fa-truck"></i> Supplier List</span>
+        <a href="{% url 'suppliers:supplier_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Supplier</a>
+    </div>
+    <div class="card-body">
+        <div class="search-bar">
+            <form method="get" style="display:flex;gap:0.75rem;">
+                <input type="text" name="q" class="form-input" placeholder="Search by name, phone, or email..." value="{{ request.GET.q }}">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                <a href="{% url 'suppliers:supplier_list' %}" class="btn btn-outline"><i class="fas fa-times"></i> Reset</a>
+            </form>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Balance</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                        <td><strong><a href="{% url 'suppliers:supplier_detail' supplier.id %}">{{ supplier.name }}</a></strong></td>
+                        <td>{{ supplier.phone|default:'-' }}</td>
+                        <td>{{ supplier.email|default:'-' }}</td>
+                        <td>{{ site_settings.currency }} {{ supplier.outstanding_balance|floatformat:0 }}</td>
+                        <td class="actions">
+                            <a href="{% url 'suppliers:supplier_detail' supplier.id %}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'suppliers:supplier_edit' supplier.id %}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align:center;">No suppliers found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if suppliers.has_other_pages %}
+        <div class="pagination">
+            {% if suppliers.has_previous %}<a href="?page={{ suppliers.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            <span class="current">{{ suppliers.number }} of {{ suppliers.paginator.num_pages }}</span>
+            {% if suppliers.has_next %}<a href="?page={{ suppliers.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

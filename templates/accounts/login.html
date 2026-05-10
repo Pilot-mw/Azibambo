@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - {% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-card">
+            <div class="logo"><i class="fas fa-store"></i></div>
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account</p>
+            {% include 'includes/messages.html' %}
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

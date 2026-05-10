@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Daily Report - {{ block.super }}{% endblock %}
+{% block page_title %}Daily Report{% endblock %}
+{% block content %}
+<div class="search-bar">
+    <form method="get" style="display:flex;gap:0.75rem;align-items:center;">
+        <input type="date" name="date" class="form-input" value="{{ date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> View</button>
+        <a href="{% url 'reports:reports_index' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    </form>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_sales|floatformat:0 }}</h3>
+            <p>Total Sales</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_expenses|floatformat:0 }}</h3>
+            <p>Total Expenses</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ profit|floatformat:0 }}</h3>
+            <p>Profit</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-shopping-cart"></i> Sales ({{ sales.count }})</div>
+        <div class="card-body">
+            <table>
+                <thead><tr><th>Receipt</th><th>Cashier</th><th>Total</th><th>Method</th></tr></thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td><a href="{% url 'sales:sale_detail' sale.id %}">{{ sale.receipt_number }}</a></td>
+                        <td>{{ sale.cashier.username }}</td>
+                        <td>{{ site_settings.currency }} {{ sale.total|floatformat:0 }}</td>
+                        <td>{{ sale.get_payment_method_display }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;">No sales on this day.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-money-bill-wave"></i> Expenses</div>
+        <div class="card-body">
+            <table>
+                <thead><tr><th>Title</th><th>Category</th><th>Amount</th></tr></thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.title }}</td>
+                        <td>{{ expense.category.name }}</td>
+                        <td>{{ site_settings.currency }} {{ expense.amount|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align:center;">No expenses on this day.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

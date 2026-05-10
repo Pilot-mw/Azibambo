@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Stock Report - {{ block.super }}{% endblock %}
+{% block page_title %}Stock Report{% endblock %}
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-warehouse"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_value|floatformat:0 }}</h3>
+            <p>Stock Value (Cost)</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-tag"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_revenue|floatformat:0 }}</h3>
+            <p>Potential Revenue</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ potential_profit|floatformat:0 }}</h3>
+            <p>Potential Profit</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="fas fa-box"></i> Current Stock</div>
+    <div class="card-body">
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>Crates/Packs/Bottles</th><th>Loose Units</th><th>Total Units</th><th>Buying Price</th><th>Selling Price</th><th>Stock Value</th></tr></thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td><span class="badge badge-info">{{ product.unit_type }}</span></td>
+                        <td>
+                            {% if product.unit_type == 'Crate' %}{{ product.crate_quantity }} Crates
+                            {% elif product.unit_type == 'Pack' %}{{ product.pack_quantity }} Packs
+                            {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}{{ product.bottle_quantity }} Bottles
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}{{ product.shot_quantity }} Shots
+                            {% elif product.unit_type == 'Crate' %}{{ product.bottle_quantity }} Bottles
+                            {% elif product.unit_type == 'Pack' %}{{ product.bottle_quantity }} Cans
+                            {% else %}{{ product.bottle_quantity }}{% endif %}
+                        </td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ site_settings.currency }} {{ product.buying_price|floatformat:0 }}</td>
+                        <td>{{ site_settings.currency }} {{ product.selling_price|floatformat:0 }}</td>
+                        <td>{{ site_settings.currency }} {{ product.stock_value|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" style="text-align:center;">No products found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

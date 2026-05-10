@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Expense Categories - {{ block.super }}{% endblock %}
+{% block page_title %}Expense Categories{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span><i class="fas fa-folder"></i> Expense Categories</span>
+        <a href="{% url 'expenses:category_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Category</a>
+    </div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>Name</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td><strong>{{ category.name }}</strong></td>
+                    <td>{{ category.description|default:'-' }}</td>
+                    <td class="actions">
+                        <a href="{% url 'expenses:category_edit' category.id %}" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'expenses:category_delete' category.id %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" style="text-align:center;">No categories yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

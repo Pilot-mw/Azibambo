@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Settings - {{ block.super }}{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-cog"></i> General Settings</div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
+                    {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div>
+        <div class="card">
+            <div class="card-header"><i class="fas fa-database"></i> Database</div>
+            <div class="card-body">
+                <p>Create a backup of your database.</p>
+                <a href="{% url 'settings_app:backup' %}" class="btn btn-warning"><i class="fas fa-download"></i> Backup Database</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><i class="fas fa-history"></i> Activity Logs</div>
+            <div class="card-body">
+                <p>View system activity and user actions.</p>
+                <a href="{% url 'settings_app:activity_logs' %}" class="btn btn-info"><i class="fas fa-list"></i> View Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

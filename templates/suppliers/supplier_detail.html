@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ supplier.name }} - {{ block.super }}{% endblock %}
+{% block page_title %}{{ supplier.name }}{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-info-circle"></i> Supplier Details</div>
+        <div class="card-body">
+            <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value"><strong>{{ supplier.name }}</strong></div></div>
+            <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">{{ supplier.phone|default:'Not set' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">{{ supplier.email|default:'Not set' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Address</div><div class="detail-value">{{ supplier.address|default:'Not set'|linebreaks }}</div></div>
+            <div class="detail-row"><div class="detail-label">Balance</div><div class="detail-value">{{ site_settings.currency }} {{ supplier.outstanding_balance|floatformat:2 }}</div></div>
+            <div class="detail-row"><div class="detail-label">Notes</div><div class="detail-value">{{ supplier.notes|default:'None'|linebreaks }}</div></div>
+            <div style="margin-top:1rem;display:flex;gap:0.75rem;">
+                <a href="{% url 'suppliers:supplier_edit' supplier.id %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
+                <a href="{% url 'suppliers:supplier_list' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-clipboard-list"></i> Purchase History</div>
+        <div class="card-body">
+            {% if purchases %}
+            <table>
+                <thead><tr><th>Product</th><th>Qty</th><th>Total</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for purchase in purchases %}
+                    <tr>
+                        <td>{{ purchase.product.name }}</td>
+                        <td>{{ purchase.quantity }}</td>
+                        <td>{{ site_settings.currency }} {{ purchase.total_amount|floatformat:0 }}</td>
+                        <td>{{ purchase.date|date:'d M Y' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No purchases recorded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Refund Sale - {{ block.super }}{% endblock %}
+{% block page_title %}Refund Sale{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px;margin:2rem auto;">
+    <div class="card-header"><i class="fas fa-undo" style="color:var(--warning);"></i> Confirm Refund</div>
+    <div class="card-body">
+        <p>Are you sure you want to refund sale <strong>{{ sale.receipt_number }}</strong>?</p>
+        <p>This will return the items to inventory.</p>
+        <div class="detail-row"><div class="detail-label">Date</div><div class="detail-value">{{ sale.created_at|date:'d M Y H:i' }}</div></div>
+        <div class="detail-row"><div class="detail-label">Total</div><div class="detail-value">{{ site_settings.currency }} {{ sale.total|floatformat:2 }}</div></div>
+        <div class="detail-row"><div class="detail-label">Items</div><div class="detail-value">{{ sale.items.count }}</div></div>
+        <form method="post" style="margin-top:1rem;">
+            {% csrf_token %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning"><i class="fas fa-undo"></i> Confirm Refund</button>
+                <a href="{% url 'sales:sale_detail' sale.id %}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

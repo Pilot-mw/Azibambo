@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Reports - {{ block.super }}{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ daily_sales|floatformat:0 }}</h3>
+            <p>Today's Sales ({{ daily_count }})</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-calendar"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ monthly_sales|floatformat:0 }}</h3>
+            <p>Monthly Sales ({{ monthly_count }})</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid-3">
+    <a href="{% url 'reports:daily_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-calendar-day" style="font-size:2rem;color:var(--primary);margin-bottom:0.5rem;"></i>
+            <h4>Daily Report</h4>
+            <p class="text-muted">View daily sales and expenses</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:weekly_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-calendar-week" style="font-size:2rem;color:var(--success);margin-bottom:0.5rem;"></i>
+            <h4>Weekly Report</h4>
+            <p class="text-muted">View weekly performance</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:monthly_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-calendar-alt" style="font-size:2rem;color:var(--purple, #7c3aed);margin-bottom:0.5rem;"></i>
+            <h4>Monthly Report</h4>
+            <p class="text-muted">View monthly summary</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:profit_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-chart-pie" style="font-size:2rem;color:var(--warning);margin-bottom:0.5rem;"></i>
+            <h4>Profit Report</h4>
+            <p class="text-muted">Revenue, COGS & profit analysis</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:stock_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-warehouse" style="font-size:2rem;color:var(--info);margin-bottom:0.5rem;"></i>
+            <h4>Stock Report</h4>
+            <p class="text-muted">Current inventory valuation</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:product_movement' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-exchange-alt" style="font-size:2rem;color:var(--danger);margin-bottom:0.5rem;"></i>
+            <h4>Product Movement</h4>
+            <p class="text-muted">Sales movement by product</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:cashier_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-users" style="font-size:2rem;color:#7c3aed;margin-bottom:0.5rem;"></i>
+            <h4>Cashier Report</h4>
+            <p class="text-muted">Performance by cashier</p>
+        </div>
+    </a>
+    <a href="{% url 'reports:low_stock_report' %}" class="card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="card-body" style="text-align:center;">
+            <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:var(--danger);margin-bottom:0.5rem;"></i>
+            <h4>Low Stock Report</h4>
+            <p class="text-muted">Products below reorder level</p>
+        </div>
+    </a>
+</div>
+{% endblock %}

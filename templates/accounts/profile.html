@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}My Profile - {{ block.super }}{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-user"></i> Profile Information</div>
+        <div class="card-body">
+            <div class="detail-row"><div class="detail-label">Username</div><div class="detail-value">{{ user.username }}</div></div>
+            <div class="detail-row"><div class="detail-label">Full Name</div><div class="detail-value">{{ user.get_full_name|default:'Not set' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">{{ user.email|default:'Not set' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value">{{ user.profile.get_role_display }}</div></div>
+            <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">{{ user.profile.phone|default:'Not set' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Member Since</div><div class="detail-value">{{ user.date_joined|date:'d M Y' }}</div></div>
+            <div style="margin-top:1rem;display:flex;gap:0.75rem;">
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</a>
+                <a href="{% url 'accounts:change_password' %}" class="btn btn-outline"><i class="fas fa-key"></i> Change Password</a>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-chart-line"></i> Account Activity</div>
+        <div class="card-body">
+            <p class="text-muted">Your recent activities and statistics will appear here.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Report - {{ block.super }}{% endblock %}
+{% block page_title %}Weekly Report{% endblock %}
+{% block content %}
+<div class="search-bar">
+    <form method="get" style="display:flex;gap:0.75rem;align-items:center;">
+        <input type="date" name="date" class="form-input" value="{{ end_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> View</button>
+        <a href="{% url 'reports:reports_index' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    </form>
+</div>
+
+<p><strong>Period:</strong> {{ start_date|date:'d M Y' }} - {{ end_date|date:'d M Y' }}</p>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_sales|floatformat:0 }}</h3>
+            <p>Total Sales ({{ sales.count }})</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_expenses|floatformat:0 }}</h3>
+            <p>Total Expenses</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ profit|floatformat:0 }}</h3>
+            <p>Profit</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-shopping-cart"></i> Sales</div>
+        <div class="card-body">
+            <table>
+                <thead><tr><th>Receipt</th><th>Date</th><th>Total</th></tr></thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr><td>{{ sale.receipt_number }}</td><td>{{ sale.created_at|date:'d M' }}</td><td>{{ site_settings.currency }} {{ sale.total|floatformat:0 }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align:center;">No sales.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-money-bill-wave"></i> Expenses</div>
+        <div class="card-body">
+            <table>
+                <thead><tr><th>Title</th><th>Amount</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr><td>{{ expense.title }}</td><td>{{ site_settings.currency }} {{ expense.amount|floatformat:0 }}</td><td>{{ expense.date|date:'d M' }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align:center;">No expenses.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Sale {{ sale.receipt_number }} - {{ block.super }}{% endblock %}
+{% block page_title %}Sale Details{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-receipt"></i> Sale Information</div>
+        <div class="card-body">
+            <div class="detail-row"><div class="detail-label">Receipt Number</div><div class="detail-value">{{ sale.receipt_number }}</div></div>
+            <div class="detail-row"><div class="detail-label">Cashier</div><div class="detail-value">{{ sale.cashier.get_full_name|default:sale.cashier.username }}</div></div>
+            <div class="detail-row"><div class="detail-label">Date & Time</div><div class="detail-value">{{ sale.created_at|date:'d M Y H:i' }}</div></div>
+            <div class="detail-row"><div class="detail-label">Payment Method</div><div class="detail-value">{{ sale.get_payment_method_display }}</div></div>
+            <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge badge-{% if sale.status == 'completed' %}success{% elif sale.status == 'refunded' %}warning{% else %}secondary{% endif %}">{{ sale.get_status_display }}</span></div></div>
+            <div class="detail-row"><div class="detail-label">Subtotal</div><div class="detail-value">{{ site_settings.currency }} {{ sale.subtotal|floatformat:2 }}</div></div>
+            <div class="detail-row"><div class="detail-label">Total</div><div class="detail-value" style="font-weight:700;">{{ site_settings.currency }} {{ sale.total|floatformat:2 }}</div></div>
+            <div class="detail-row"><div class="detail-label">Amount Paid</div><div class="detail-value">{{ site_settings.currency }} {{ sale.amount_paid|floatformat:2 }}</div></div>
+            <div class="detail-row"><div class="detail-label">Change</div><div class="detail-value">{{ site_settings.currency }} {{ sale.change_due|floatformat:2 }}</div></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-box"></i> Items</div>
+        <div class="card-body">
+            <table>
+                <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Subtotal</th></tr></thead>
+                <tbody>
+                    {% for item in sale.items.all %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.selling_unit|default:'Bottle' }}</td>
+                        <td>{{ site_settings.currency }} {{ item.price|floatformat:2 }}</td>
+                        <td>{{ site_settings.currency }} {{ item.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><th colspan="4">Total</th><th>{{ site_settings.currency }} {{ sale.total|floatformat:2 }}</th></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+<div style="display:flex;gap:0.75rem;margin-top:1rem;">
+    <a href="{% url 'sales:sale_receipt' sale.id %}" class="btn btn-primary"><i class="fas fa-print"></i> Print Receipt</a>
+    {% if sale.status == 'completed' %}
+    <a href="{% url 'sales:refund_sale' sale.id %}" class="btn btn-warning"><i class="fas fa-undo"></i> Refund</a>
+    {% endif %}
+    <a href="{% url 'sales:sale_history' %}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back to History</a>
+</div>
+{% endblock %}

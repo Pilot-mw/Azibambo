@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Products - {{ block.super }}{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span><i class="fas fa-box"></i> Product List</span>
+        <a href="{% url 'inventory:product_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Product</a>
+    </div>
+    <div class="card-body">
+        <div class="search-bar">
+            <form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;width:100%;">
+                <input type="text" name="q" class="form-input" placeholder="Search by name or barcode..." value="{{ query }}">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                <a href="{% url 'inventory:product_list' %}" class="btn btn-outline"><i class="fas fa-times"></i> Reset</a>
+            </form>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Unit</th>
+                        <th>Buying Price</th>
+                        <th>Selling Price</th>
+                        <th>Stock</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td>{{ product.category.name }}</td>
+                        <td>
+                            {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                            <span class="badge badge-info">{{ product.unit_type }}</span>
+                            <small style="display:block;font-size:0.7rem;color:var(--text-muted);">1 {{ product.unit_type }} = {{ product.units_per_crate }} Bottles</small>
+                            {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                            <span class="badge badge-info">{{ product.unit_type }}</span>
+                            <small style="display:block;font-size:0.7rem;color:var(--text-muted);">1 {{ product.unit_type }} = {{ product.units_per_pack }} Bottles/Cans</small>
+                            {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                            <span class="badge badge-info">Bottle-Shot</span>
+                            <small style="display:block;font-size:0.7rem;color:var(--text-muted);">1 Bottle = {{ product.shots_per_bottle }} Shots</small>
+                            {% else %}
+                            <span class="badge badge-secondary">{{ product.unit_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ site_settings.currency }} {{ product.buying_price|floatformat:0 }}</td>
+                        <td>{{ site_settings.currency }} {{ product.selling_price|floatformat:0 }}</td>
+                    <td>
+                        {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                            {{ product.crate_quantity }} Crates ({{ product.quantity }} Bottles)
+                            {% if product.is_low_stock %}
+                            <span class="badge badge-danger">Low</span>
+                            {% endif %}
+                        {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                            {{ product.pack_quantity }} Packs ({{ product.quantity }} Bottles/Cans)
+                            {% if product.is_low_stock %}
+                            <span class="badge badge-danger">Low</span>
+                            {% endif %}
+                        {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                            {{ product.bottle_quantity }} Bottles ({{ product.quantity }} Shots)
+                            {% if product.is_low_stock %}
+                            <span class="badge badge-danger">Low</span>
+                            {% endif %}
+                        {% else %}
+                            {% if product.is_low_stock %}
+                            <span class="badge badge-danger">{{ product.quantity }}</span>
+                            {% else %}
+                            {{ product.quantity }}
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                        <td class="actions">
+                            <a href="{% url 'inventory:product_edit' product.id %}" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'inventory:product_delete' product.id %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align:center;">No products found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if products.has_other_pages %}
+        <div class="pagination">
+            {% if products.has_previous %}
+            <a href="?page={{ products.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            <span class="current">{{ products.number }} of {{ products.paginator.num_pages }}</span>
+            {% if products.has_next %}
+            <a href="?page={{ products.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

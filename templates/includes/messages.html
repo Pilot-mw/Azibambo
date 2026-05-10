@@ -1,0 +1,9 @@
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">
+    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}times-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+    {{ message }}
+    <button class="alert-dismiss">&times;</button>
+</div>
+{% endfor %}
+{% endif %}

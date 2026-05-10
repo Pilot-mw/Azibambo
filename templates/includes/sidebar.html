@@ -1,0 +1,32 @@
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="fas fa-store"></i>
+        <span>{% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</span>
+    </div>
+    <div class="sidebar-menu">
+        <div class="menu-label">Main Menu</div>
+        <a href="{% url 'dashboard:index' %}"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="{% url 'sales:pos' %}"><i class="fas fa-shopping-cart"></i> Point of Sale</a>
+        <a href="{% url 'sales:sale_history' %}"><i class="fas fa-receipt"></i> Sale History</a>
+
+        <div class="menu-label">Management</div>
+        <a href="{% url 'inventory:product_list' %}"><i class="fas fa-box"></i> Products</a>
+        <a href="{% url 'inventory:category_list' %}"><i class="fas fa-tags"></i> Categories</a>
+        <a href="{% url 'suppliers:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
+        <a href="{% url 'suppliers:purchase_list' %}"><i class="fas fa-clipboard-list"></i> Purchases</a>
+        <a href="{% url 'expenses:expense_list' %}"><i class="fas fa-money-bill-wave"></i> Expenses</a>
+        <a href="{% url 'inventory:stock_sheet' %}"><i class="fas fa-table"></i> Stock Sheet</a>
+
+        <div class="menu-label">Reports</div>
+        <a href="{% url 'reports:reports_index' %}"><i class="fas fa-chart-bar"></i> Reports</a>
+
+        <div class="menu-label">System</div>
+        <a href="{% url 'settings_app:settings' %}"><i class="fas fa-cog"></i> Settings</a>
+        <a href="{% url 'settings_app:activity_logs' %}"><i class="fas fa-history"></i> Activity Logs</a>
+        {% if user.profile.role == 'super_admin' %}
+        <a href="{% url 'accounts:register' %}"><i class="fas fa-user-plus"></i> Register User</a>
+        {% endif %}
+        <a href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> My Profile</a>
+        <a href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+</div>

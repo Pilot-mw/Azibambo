@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Expenses - {{ block.super }}{% endblock %}
+{% block page_title %}Expenses{% endblock %}
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="stat-info">
+            <h3>{{ site_settings.currency }} {{ total_amount|floatformat:0 }}</h3>
+            <p>Total (Current Page)</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span><i class="fas fa-list"></i> Expense List</span>
+        <a href="{% url 'expenses:expense_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Expense</a>
+    </div>
+    <div class="card-body">
+        <div class="search-bar">
+            <form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;width:100%;">
+                <input type="text" name="q" class="form-input" placeholder="Search expenses..." value="{{ query }}">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="date_from" class="form-input" value="{{ request.GET.date_from }}" style="max-width:180px;">
+                <input type="date" name="date_to" class="form-input" value="{{ request.GET.date_to }}" style="max-width:180px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+                <a href="{% url 'expenses:expense_list' %}" class="btn btn-outline"><i class="fas fa-times"></i> Reset</a>
+            </form>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Title</th><th>Category</th><th>Amount</th><th>Paid By</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td><strong>{{ expense.title }}</strong></td>
+                        <td>{{ expense.category.name }}</td>
+                        <td>{{ site_settings.currency }} {{ expense.amount|floatformat:0 }}</td>
+                        <td>{{ expense.paid_by.username }}</td>
+                        <td>{{ expense.date|date:'d M Y' }}</td>
+                        <td class="actions">
+                            <a href="{% url 'expenses:expense_edit' expense.id %}" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'expenses:expense_delete' expense.id %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align:center;">No expenses found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if expenses.has_other_pages %}
+        <div class="pagination">
+            {% if expenses.has_previous %}<a href="?page={{ expenses.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            <span class="current">{{ expenses.number }} of {{ expenses.paginator.num_pages }}</span>
+            {% if expenses.has_next %}<a href="?page={{ expenses.next_page_number }}"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

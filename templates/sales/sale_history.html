@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Sale History - {{ block.super }}{% endblock %}
+{% block page_title %}Sale History{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="fas fa-history"></i> Sale History</div>
+    <div class="card-body">
+        <div class="search-bar">
+            <form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;width:100%;">
+                <input type="text" name="q" class="form-input" placeholder="Search receipt or cashier..." value="{{ request.GET.q }}">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="refunded" {% if request.GET.status == 'refunded' %}selected{% endif %}>Refunded</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+                <select name="payment" class="form-select">
+                    <option value="">All Payments</option>
+                    <option value="cash" {% if request.GET.payment == 'cash' %}selected{% endif %}>Cash</option>
+                    <option value="airtel_money" {% if request.GET.payment == 'airtel_money' %}selected{% endif %}>Airtel Money</option>
+                    <option value="tnm_mpamba" {% if request.GET.payment == 'tnm_mpamba' %}selected{% endif %}>TNM Mpamba</option>
+                    <option value="card" {% if request.GET.payment == 'card' %}selected{% endif %}>Card</option>
+                </select>
+                <input type="date" name="date_from" class="form-input" value="{{ request.GET.date_from }}" style="max-width:180px;">
+                <input type="date" name="date_to" class="form-input" value="{{ request.GET.date_to }}" style="max-width:180px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+                <a href="{% url 'sales:sale_history' %}" class="btn btn-outline"><i class="fas fa-times"></i> Reset</a>
+            </form>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Receipt</th><th>Cashier</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td><strong>{{ sale.receipt_number }}</strong></td>
+                        <td>{{ sale.cashier.username }}</td>
+                        <td>{{ sale.items.count }}</td>
+                        <td>{{ site_settings.currency }} {{ sale.total|floatformat:0 }}</td>
+                        <td>{{ sale.get_payment_method_display }}</td>
+                        <td><span class="badge badge-{% if sale.status == 'completed' %}success{% elif sale.status == 'refunded' %}warning{% else %}secondary{% endif %}">{{ sale.get_status_display }}</span></td>
+                        <td>{{ sale.created_at|date:'d M Y H:i' }}</td>
+                        <td class="actions">
+                            <a href="{% url 'sales:sale_detail' sale.id %}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'sales:sale_receipt' sale.id %}" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" style="text-align:center;">No sales found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if sales.has_other_pages %}
+        <div class="pagination">
+            {% if sales.has_previous %}<a href="?page={{ sales.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            <span class="current">{{ sales.number }} of {{ sales.paginator.num_pages }}</span>
+            {% if sales.has_next %}<a href="?page={{ sales.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

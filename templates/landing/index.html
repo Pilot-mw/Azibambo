@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %} - POS System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="landing-page">
+        <div class="landing-nav">
+            <div class="brand"><i class="fas fa-store"></i> {% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</div>
+            <div>
+                <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</a>
+            </div>
+        </div>
+        <div class="landing-hero">
+            <h1>Welcome to {% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</h1>
+            <p>Complete Point of Sale and Inventory Management System. Manage sales, track inventory, and generate reports with ease.</p>
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt"></i> Get Started</a>
+        </div>
+    </div>
+</body>
+</html>
