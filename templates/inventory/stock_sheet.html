@@ -5,285 +5,499 @@
 {% block extra_css %}
 <style>
 :root {
-    --ss-bg: #1a1a2e;
-    --ss-card: #16213e;
-    --ss-table-bg: #0f1729;
-    --ss-border: #2a2a4a;
+    --ss-bg: #0f1729;
+    --ss-card: #1e293b;
+    --ss-table-bg: #1a2332;
+    --ss-border: #2d3a4a;
     --ss-text: #e2e8f0;
     --ss-text-muted: #94a3b8;
-    --ss-orange: #f97316;
-    --ss-orange-glow: rgba(249,115,22,0.3);
-    --ss-orange-dark: #ea580c;
-    --ss-input-bg: #1e293b;
+    --ss-accent: var(--branch-primary, #f97316);
+    --ss-accent-glow: var(--branch-primary, #f97316);
+    --ss-accent-dark: var(--branch-secondary, #ea580c);
+    --ss-input-bg: #0f1729;
     --ss-hover: #1e3a5f;
     --ss-success: #22c55e;
     --ss-danger: #ef4444;
     --ss-blue: #60a5fa;
+    --ss-yellow: #eab308;
+    --cat-header-bg: #0f1729;
 }
 body { background: var(--ss-bg); }
 .page-content { background: var(--ss-bg); min-height: calc(100vh - 60px); }
-.card { background: var(--ss-card); border-color: var(--ss-border); }
-.card-header { background: var(--ss-card); border-color: var(--ss-border); color: var(--ss-text); }
-
-.category-pills {
-    display: flex; gap: 0.75rem; flex-wrap: wrap;
-    padding: 1rem 1.25rem; margin-bottom: 0.5rem;
-}
-.pill {
-    padding: 0.6rem 1.5rem; border-radius: 50px;
-    background: #1e293b; color: var(--ss-text-muted);
-    border: 1px solid var(--ss-border); cursor: pointer;
-    font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
-    transition: all 0.3s ease; user-select: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.pill:hover {
-    background: #334155; color: #fff;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    transform: translateY(-1px);
-}
-.pill.active {
-    background: var(--ss-orange); color: #fff; border-color: var(--ss-orange);
-    box-shadow: 0 0 20px var(--ss-orange-glow), 0 4px 16px rgba(0,0,0,0.3);
-}
-.pill.active:hover {
-    background: var(--ss-orange-dark);
-    box-shadow: 0 0 30px var(--ss-orange-glow), 0 6px 20px rgba(0,0,0,0.4);
-}
-.pill-all { background: #1e293b; color: var(--ss-text-muted); border: 1px solid var(--ss-border); }
-.pill-all.active { background: #334155; color: #fff; border-color: #475569; box-shadow: 0 0 15px rgba(71,85,105,0.4); }
+.page-content { padding: 1rem; }
 
 .ss-toolbar {
     display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 0.75rem; padding: 0 1.25rem 1rem 1.25rem;
+    flex-wrap: wrap; gap: 0.75rem; padding: 1rem 0;
 }
-.ss-toolbar .form-input {
+.ss-toolbar-left, .ss-toolbar-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.ss-toolbar .form-input, .ss-toolbar .form-select {
     background: var(--ss-input-bg); color: #fff;
     border: 1px solid var(--ss-border); border-radius: 8px;
-    padding: 0.5rem 0.8rem;
+    padding: 0.5rem 0.8rem; font-size: 0.85rem;
 }
-.ss-toolbar .form-input:focus { border-color: var(--ss-orange); box-shadow: 0 0 0 3px var(--ss-orange-glow); }
+.ss-toolbar .form-input:focus, .ss-toolbar .form-select:focus {
+    border-color: var(--ss-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ss-accent) 20%, transparent);
+}
 
 .btn-ss {
-    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem;
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem;
     font-weight: 600; border: none; cursor: pointer;
     display: inline-flex; align-items: center; gap: 0.4rem;
-    transition: all 0.2s;
+    transition: all 0.2s; white-space: nowrap;
 }
-.btn-ss-primary { background: var(--ss-orange); color: #fff; }
-.btn-ss-primary:hover { background: var(--ss-orange-dark); box-shadow: 0 0 15px var(--ss-orange-glow); }
+.btn-ss-primary { background: var(--ss-accent); color: #fff; }
+.btn-ss-primary:hover { background: var(--ss-accent-dark); box-shadow: 0 0 15px color-mix(in srgb, var(--ss-accent) 40%, transparent); }
+.btn-ss-success { background: var(--ss-success); color: #fff; }
+.btn-ss-success:hover { filter: brightness(1.1); }
 .btn-ss-secondary { background: var(--ss-input-bg); color: var(--ss-text); border: 1px solid var(--ss-border); }
 .btn-ss-secondary:hover { background: #334155; }
 
-.ss-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid var(--ss-border); }
-.ss-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; }
-.ss-table thead { position: sticky; top: 0; z-index: 10; }
+.ss-wrapper {
+    overflow-x: auto; border-radius: 12px;
+    border: 1px solid var(--ss-border);
+    background: var(--ss-table-bg);
+    max-height: calc(100vh - 260px);
+    position: relative;
+}
+.ss-table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    min-width: 1100px; font-size: 0.82rem;
+}
+.ss-table thead { position: sticky; top: 0; z-index: 20; }
 .ss-table th {
     background: #0f1729; color: var(--ss-text-muted);
-    padding: 0.9rem 0.8rem; font-size: 0.75rem; font-weight: 700;
+    padding: 0.8rem 0.6rem; font-size: 0.7rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.08em;
     border-bottom: 2px solid var(--ss-border);
     text-align: center; white-space: nowrap;
+    position: sticky; top: 0; z-index: 20;
 }
-.ss-table th:first-child { text-align: left; padding-left: 1.2rem; }
+.ss-table th:first-child { text-align: left; padding-left: 1.2rem; position: sticky; left: 0; z-index: 21; background: #0f1729; }
 .ss-table td {
-    padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--ss-border);
+    padding: 0.35rem 0.3rem; border-bottom: 1px solid var(--ss-border);
     text-align: center; vertical-align: middle;
     background: var(--ss-table-bg); color: var(--ss-text);
-    transition: background 0.2s;
+    transition: background 0.15s;
 }
-.ss-table td:first-child { text-align: left; padding-left: 1.2rem; font-weight: 600; min-width: 160px; }
+.ss-table td:first-child {
+    text-align: left; padding-left: 1rem; font-weight: 600;
+    min-width: 170px; position: sticky; left: 0;
+    background: var(--ss-table-bg); z-index: 2;
+}
 .ss-table tbody tr:hover td { background: var(--ss-hover); }
+.ss-table tbody tr:hover td:first-child { background: var(--ss-hover); }
+.ss-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.ss-table tbody tr:nth-child(even):hover td { background: var(--ss-hover); }
+.ss-table tbody tr:nth-child(even) td:first-child { background: rgba(255,255,255,0.02); }
+.ss-table tbody tr:nth-child(even):hover td:first-child { background: var(--ss-hover); }
+
+.cat-header {
+    background: var(--cat-header-bg) !important;
+    border-bottom: 2px solid var(--ss-accent);
+}
+.cat-header td {
+    background: var(--cat-header-bg) !important;
+    color: var(--ss-accent); font-weight: 700; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.6rem 1rem !important;
+    border-bottom: 2px solid var(--ss-accent);
+}
+.cat-header td:first-child { background: var(--cat-header-bg) !important; }
 
 .ss-input {
-    width: 80px; padding: 0.4rem 0.5rem;
+    width: 72px; padding: 0.35rem 0.3rem;
     background: var(--ss-input-bg); color: #fff;
-    border: 1px solid var(--ss-border); border-radius: 6px;
-    text-align: center; font-size: 0.85rem; font-weight: 600;
+    border: 1px solid var(--ss-border); border-radius: 5px;
+    text-align: center; font-size: 0.82rem; font-weight: 600;
     transition: all 0.2s;
 }
-.ss-input:focus { outline: none; border-color: var(--ss-orange); box-shadow: 0 0 0 3px var(--ss-orange-glow); background: #1e293b; }
+.ss-input:focus {
+    outline: none; border-color: var(--ss-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ss-accent) 30%, transparent);
+    background: #1a2744;
+}
 .ss-input:hover { border-color: #475569; }
-.ss-input.price-input { width: 100px; }
-.ss-input.readonly { background: #0f1729; color: var(--ss-text-muted); cursor: default; border-color: transparent; }
-.ss-input.highlight-total { color: var(--ss-orange); font-weight: 700; }
-.ss-input.highlight-remain { color: var(--ss-success); font-weight: 700; }
-.ss-input.highlight-amount { color: var(--ss-blue); font-weight: 700; }
+.ss-input.price-input { width: 88px; }
+.ss-input.readonly { background: #111b2e; color: var(--ss-text-muted); cursor: default; }
+.ss-input.calc-total { color: var(--ss-yellow); font-weight: 700; }
+.ss-input.calc-remain { color: var(--ss-success); font-weight: 700; }
 .ss-input.editable { border-color: #334155; }
-.ss-input.editable:focus { border-color: var(--ss-orange); }
+.ss-input.editable:focus { border-color: var(--ss-accent); }
+.ss-input.error { border-color: var(--ss-danger) !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }
 
 .item-name { display: flex; align-items: center; gap: 0.5rem; }
-.item-unit { font-size: 0.7rem; color: var(--ss-text-muted); font-weight: 400; }
+.item-unit { font-size: 0.65rem; color: var(--ss-text-muted); font-weight: 400; }
 
-.ss-footer {
-    background: #0f1729; border-top: 2px solid var(--ss-orange); font-weight: 700;
-}
+.ss-footer { position: sticky; bottom: 0; z-index: 20; }
 .ss-footer td {
-    padding: 0.9rem 0.8rem; background: #0f1729;
-    color: var(--ss-text); font-size: 0.9rem;
+    padding: 0.7rem 0.5rem; background: #0f1729;
+    color: var(--ss-text); font-size: 0.82rem; font-weight: 700;
+    border-top: 2px solid var(--ss-accent);
+    text-align: center;
 }
-.ss-footer .total-value { color: var(--ss-orange); font-size: 1rem; }
+.ss-footer td:first-child { text-align: left; padding-left: 1rem; position: sticky; left: 0; background: #0f1729; z-index: 21; }
+.ss-footer .total-value { color: var(--ss-accent); font-weight: 800; }
+.ss-footer .total-value.green { color: var(--ss-success); }
+.ss-footer .total-value.yellow { color: var(--ss-yellow); }
 
-.category-badge { font-size: 0.65rem; color: var(--ss-text-muted); display: block; }
+.ss-info-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 0;
+    color: var(--ss-text-muted); font-size: 0.8rem;
+}
+.ss-info-bar .save-status { display: flex; align-items: center; gap: 0.4rem; }
+.ss-info-bar .save-status.saving { color: var(--ss-yellow); }
+.ss-info-bar .save-status.saved { color: var(--ss-success); }
+.ss-info-bar .save-status.error { color: var(--ss-danger); }
+
+.pill-group {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0.75rem 0;
+}
+.pill {
+    padding: 0.45rem 1.2rem; border-radius: 50px;
+    background: var(--ss-input-bg); color: var(--ss-text-muted);
+    border: 1px solid var(--ss-border); cursor: pointer;
+    font-size: 0.78rem; font-weight: 600;
+    transition: all 0.25s; user-select: none;
+}
+.pill:hover { background: #334155; color: #fff; }
+.pill.active {
+    background: var(--ss-accent); color: #fff; border-color: var(--ss-accent);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--ss-accent) 30%, transparent);
+}
+
+.transfer-bar {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 0; flex-wrap: wrap;
+}
+.transfer-label {
+    font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ss-text-muted); white-space: nowrap;
+}
+.transfer-btn {
+    padding: 0.55rem 1.5rem; border-radius: 50px; border: 2px solid transparent;
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    transition: all 0.25s; user-select: none; white-space: nowrap;
+    background: var(--ss-input-bg); color: var(--ss-text-muted);
+    border-color: var(--ss-border);
+}
+.transfer-btn:hover { border-color: #475569; color: #fff; }
+.transfer-btn.azibambo { --btn-color: #6B3E2E; --btn-glow: rgba(107,62,46,0.4); }
+.transfer-btn.azibambo.active {
+    background: var(--btn-color); color: #fff; border-color: var(--btn-color);
+    box-shadow: 0 0 18px var(--btn-glow);
+}
+.transfer-btn.cv-lounge { --btn-color: #6A0DAD; --btn-glow: rgba(106,13,173,0.4); }
+.transfer-btn.cv-lounge.active {
+    background: var(--btn-color); color: #fff; border-color: var(--btn-color);
+    box-shadow: 0 0 18px var(--btn-glow);
+}
 
 @media print {
-    .sidebar, .navbar, .ss-toolbar, .category-pills, .page-header { display: none !important; }
+    .sidebar, .navbar, .ss-toolbar, .pill-group, .page-header, .ss-info-bar { display: none !important; }
     .page-content { padding: 0 !important; background: #fff !important; }
     .ss-table th, .ss-table td { color: #000 !important; background: #fff !important; }
     .ss-input { border: none !important; background: transparent !important; color: #000 !important; }
-    .ss-wrapper { border: 1px solid #ccc !important; }
+    .ss-wrapper { border: 1px solid #ccc !important; max-height: none !important; }
     body { background: #fff !important; }
-    .card { box-shadow: none !important; border: none !important; }
-    .ss-footer td { color: #000 !important; }
+    .ss-footer td { color: #000 !important; background: #f5f5f5 !important; }
     .ss-table th { background: #f1f5f9 !important; color: #000 !important; }
+    .ss-footer td:first-child { background: #f5f5f5 !important; }
+    .ss-table td:first-child { background: #fff !important; }
 }
 </style>
 {% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-header" style="border-bottom:none;">
-        <span><i class="fas fa-table" style="color:var(--ss-orange);"></i> Daily Stock Sheet</span>
-        <span style="font-size:0.85rem;color:var(--ss-text-muted);">{{ selected_date }}</span>
+<div class="card" style="background:var(--ss-card);border:1px solid var(--ss-border);">
+    <div class="card-header branch-theme-gradient" style="border-bottom:none;color:#fff;">
+        <span><i class="fas fa-table"></i> Daily Stock Sheet</span>
+        <span style="font-size:0.85rem;opacity:0.8;">{{ selected_date }}</span>
     </div>
+    <div class="card-body" style="padding:0.5rem 1rem 1rem 1rem;">
 
-    <div class="category-pills">
-        <button class="pill pill-all {% if not selected_category %}active{% endif %}" data-category="">All Categories</button>
-        {% for cat in categories %}
-        <button class="pill {% if selected_category == cat.name %}active{% endif %}" data-category="{{ cat.name }}">{{ cat.name }}</button>
-        {% endfor %}
-    </div>
-
-    <div class="ss-toolbar">
-        <div class="ss-toolbar-left">
-            <input type="date" id="datePicker" class="form-input" value="{{ selected_date }}" style="max-width:180px;">
-            <span style="color:var(--ss-text-muted);font-size:0.8rem;">{{ rows|length }} items</span>
+        <div class="pill-group">
+            <button class="pill pill-all {% if not selected_category %}active{% endif %}" data-category="">All Categories</button>
+            {% for cat in categories %}
+            <button class="pill {% if selected_category == cat.name %}active{% endif %}" data-category="{{ cat.name }}">{{ cat.name }}</button>
+            {% endfor %}
         </div>
-        <div class="ss-toolbar-right">
-            <button class="btn-ss btn-ss-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-            <button class="btn-ss btn-ss-secondary" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
-        </div>
-    </div>
 
-    <div class="ss-wrapper">
-        <table class="ss-table" id="stockSheetTable">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>OPEN</th>
-                    <th>ORDER</th>
-                    <th>TOTAL</th>
-                    <th>Selling Price</th>
-                    <th>SOLD</th>
-                    <th>REMAIN</th>
-                    <th>Total Amount</th>
-                </tr>
-            </thead>
-            <tbody id="sheetBody">
-                {% for row in rows %}
-                <tr class="ss-row"
-                    data-id="{% if row.id %}{{ row.id }}{% endif %}"
-                    data-item-id="{{ row.item.id }}"
-                    data-category="{{ row.item.category.name }}">
-                    <td>
-                        <div class="item-name">
-                            {{ row.item.name }}
-                            {% if row.item.unit_type == 'Crate' %}<span class="item-unit">(Crate)</span>{% endif %}
-                            {% if row.item.unit_type == 'Pack' %}<span class="item-unit">(Pack)</span>{% endif %}
-                            {% if row.item.unit_type == 'Bottle' and row.item.shots_per_bottle > 1 %}<span class="item-unit">(Bottle-Shot)</span>{% endif %}
-                        </div>
-                        <span class="category-badge">{{ row.item.category.name }}</span>
-                    </td>
-                    <td><input type="number" class="ss-input readonly" value="{{ row.open_stock }}" readonly></td>
-                    <td><input type="number" class="ss-input editable field-order" value="{{ row.order_stock }}" min="0" placeholder="0"></td>
-                    <td><input type="number" class="ss-input readonly highlight-total" value="{{ row.total_stock }}" readonly></td>
-                    <td><input type="number" class="ss-input price-input readonly" value="{{ row.selling_price|floatformat:0 }}" readonly></td>
-                    <td><input type="number" class="ss-input editable field-sold" value="{{ row.sold_stock }}" min="0" placeholder="0"></td>
-                    <td><input type="number" class="ss-input readonly highlight-remain" value="{{ row.remaining_stock }}" readonly></td>
-                    <td><input type="number" class="ss-input price-input readonly highlight-amount" value="{{ row.total_amount|floatformat:0 }}" readonly></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr class="ss-footer">
-                    <td><strong>TOTALS</strong></td>
-                    <td id="footerOpen">-</td>
-                    <td id="footerOrder">-</td>
-                    <td id="footerTotal">-</td>
-                    <td>-</td>
-                    <td id="footerSold">-</td>
-                    <td id="footerRemain">-</td>
-                    <td id="footerAmount" style="color:var(--ss-orange);font-size:1rem;">-</td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="transfer-bar">
+            <span class="transfer-label"><i class="fas fa-exchange-alt"></i> Transfer To:</span>
+            {% for tb in transfer_branches %}
+            <button class="transfer-btn {% if tb.branch_name == 'Azibambo Stop Over' %}azibambo{% elif tb.branch_name == 'CV Lounge' %}cv-lounge{% endif %}" data-branch-id="{{ tb.id }}" data-branch-name="{{ tb.branch_name }}">
+                <i class="fas fa-{% if tb.branch_type == 'Bar' %}glass-cheers{% elif tb.branch_type == 'Club' %}music{% else %}store{% endif %}"></i>
+                {{ tb.branch_name }}
+            </button>
+            {% endfor %}
+            <span id="transferStatus" style="font-size:0.75rem;color:var(--ss-text-muted);margin-left:0.5rem;">No branch selected</span>
+        </div>
+
+        <div class="ss-toolbar">
+            <div class="ss-toolbar-left">
+                <input type="date" id="datePicker" class="form-input" value="{{ selected_date }}" style="max-width:160px;">
+                <input type="text" id="searchFilter" class="form-input" placeholder="Search items..." value="{{ search_q }}" style="max-width:200px;">
+                <span style="color:var(--ss-text-muted);font-size:0.78rem;" id="itemCount">{{ rows|length }} items</span>
+            </div>
+            <div class="ss-toolbar-right">
+                <button class="btn-ss btn-ss-primary" id="transferAllBtn"><i class="fas fa-exchange-alt"></i> Transfer All</button>
+                <button class="btn-ss btn-ss-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                <button class="btn-ss btn-ss-secondary" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
+                <button class="btn-ss btn-ss-secondary" id="exportExcelBtn"><i class="fas fa-file-excel"></i> Excel</button>
+            </div>
+        </div>
+
+        <div class="ss-wrapper">
+            <table class="ss-table" id="stockSheetTable">
+                <thead>
+                    <tr>
+                        <th style="min-width:180px;">ITEM</th>
+                        <th style="width:80px;">OPEN</th>
+                        <th style="width:80px;">ORDER</th>
+                        <th style="width:80px;">TOTAL</th>
+                        <th style="width:100px;">Buying Price</th>
+                        <th style="width:100px;">Selling Price</th>
+                        <th style="width:80px;">MOVED</th>
+                        <th style="width:80px;">REMAIN</th>
+                    </tr>
+                </thead>
+                <tbody id="sheetBody">
+                    {% if rows %}
+                    {% regroup rows by item.category.name as category_groups %}
+                    {% for group in category_groups %}
+                    <tr class="cat-header" data-category-group="{{ group.grouper }}">
+                        <td colspan="8"><i class="fas fa-folder-open" style="margin-right:0.5rem;"></i> {{ group.grouper }}</td>
+                    </tr>
+                    {% for row in group.list %}
+                    <tr class="ss-row"
+                        data-id="{{ row.id|default:'' }}"
+                        data-item-id="{{ row.item.id }}"
+                        data-category="{{ row.item.category.name }}">
+                        <td>
+                            <div class="item-name">
+                                {{ row.item.name }}
+                                <span class="item-unit">({{ row.item.warehouse_unit_label }})</span>
+                            </div>
+                        </td>
+                        {% with wh_label=row.item.warehouse_unit_label %}
+                        <td>
+                            <input type="number" class="ss-input editable field-open" value="{{ row.open_stock }}" min="0" placeholder="0">
+                            <div style="font-size:0.6rem;color:var(--ss-text-muted);">{{ row.open_stock }} {{ wh_label }}</div>
+                        </td>
+                        <td>
+                            <input type="number" class="ss-input editable field-order" value="{{ row.order_stock }}" min="0" placeholder="0">
+                            <div style="font-size:0.6rem;color:var(--ss-text-muted);">{{ row.order_stock }} {{ wh_label }}</div>
+                        </td>
+                        <td>
+                            <input type="number" class="ss-input readonly calc-total" value="{{ row.total_stock }}" readonly>
+                            <div style="font-size:0.6rem;color:var(--ss-text-muted);">{{ row.total_stock }} {{ wh_label }}</div>
+                        </td>
+                        <td><input type="number" class="ss-input price-input editable field-buying-price" value="{% if row.buying_price %}{{ row.buying_price|floatformat:0 }}{% else %}{{ row.item.buying_price|floatformat:0 }}{% endif %}" min="0" step="0.01" placeholder="0"></td>
+                        <td><input type="number" class="ss-input price-input editable field-selling-price" value="{% if row.selling_price %}{{ row.selling_price|floatformat:0 }}{% else %}{{ row.item.selling_price|floatformat:0 }}{% endif %}" min="0" step="0.01" placeholder="0"></td>
+                        <td>
+                            <input type="number" class="ss-input editable field-moved" value="{{ row.moved_stock }}" min="0" placeholder="0">
+                            <div style="font-size:0.6rem;color:var(--ss-text-muted);">{{ row.moved_stock }} {{ wh_label }}</div>
+                        </td>
+                        <td>
+                            <input type="number" class="ss-input readonly calc-remain" value="{{ row.remaining_stock }}" readonly>
+                            <div style="font-size:0.6rem;color:var(--ss-text-muted);">{{ row.remaining_stock }} {{ wh_label }}</div>
+                        </td>
+                        {% endwith %}
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:3rem 1rem;color:var(--ss-text-muted);font-size:0.95rem;">
+                            <i class="fas fa-box-open" style="font-size:1.5rem;display:block;margin-bottom:0.75rem;opacity:0.5;"></i>
+                            No stock recorded for this branch yet
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot class="ss-footer">
+                    <tr>
+                        <td><strong>TOTALS</strong></td>
+                        <td id="footerOpen" class="total-value">0</td>
+                        <td id="footerOrder" class="total-value">0</td>
+                        <td id="footerTotal" class="total-value yellow">0</td>
+                        <td id="footerBuyingValue" class="total-value">0</td>
+                        <td id="footerSellingValue" class="total-value">0</td>
+                        <td id="footerMoved" class="total-value">0</td>
+                        <td id="footerRemain" class="total-value green">0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="ss-info-bar">
+            <div class="save-status" id="saveStatus"><i class="fas fa-check-circle"></i> Ready</div>
+            <div>{{ totals.open }} open · {{ totals.order }} ordered · {{ totals.moved }} moved · {{ totals.remain }} remaining</div>
+        </div>
+
     </div>
 </div>
 {% endblock %}
 {% block extra_js %}
 <script>
-var currentCategory = '{{ selected_category }}';
-var saveTimers = {};
+var currentCategory = '{{ selected_category|escapejs }}';
+var selectedBranchId = null;
+var selectedBranchName = '';
 
 function recalcRow(row) {
-    var open = parseInt(row.querySelector('td:nth-child(2) input').value) || 0;
+    var open = parseInt(row.querySelector('.field-open').value) || 0;
     var order = parseInt(row.querySelector('.field-order').value) || 0;
-    var price = parseFloat(row.querySelector('td:nth-child(5) input').value) || 0;
-    var sold = parseInt(row.querySelector('.field-sold').value) || 0;
-
+    var moved = parseInt(row.querySelector('.field-moved').value) || 0;
     var total = open + order;
-    var remain = total - sold;
-    var amount = sold * price;
+    var remain = total - moved;
 
-    row.querySelector('td:nth-child(4) input').value = total;
-    row.querySelector('td:nth-child(7) input').value = remain;
-    row.querySelector('td:nth-child(8) input').value = amount.toFixed(0);
+    row.querySelector('.calc-total').value = total;
+    row.querySelector('.calc-remain').value = remain;
+
+    var movedInput = row.querySelector('.field-moved');
+    if (moved > total) {
+        movedInput.classList.add('error');
+    } else {
+        movedInput.classList.remove('error');
+    }
 }
 
 function recalcFooter() {
-    var rows = document.querySelectorAll('#sheetBody .ss-row');
-    var totalOpen = 0, totalOrder = 0, totalTotal = 0, totalSold = 0, totalRemain = 0, totalAmount = 0;
+    var rows = document.querySelectorAll('#sheetBody .ss-row:not(.cat-header)');
+    var totalOpen = 0, totalOrder = 0, totalTotal = 0, totalMoved = 0, totalRemain = 0;
+    var totalBuyingValue = 0, totalSellingValue = 0;
+
     rows.forEach(function(row) {
         if (row.style.display === 'none') return;
-        totalOpen += parseInt(row.querySelector('td:nth-child(2) input').value) || 0;
-        totalOrder += parseInt(row.querySelector('.field-order').value) || 0;
-        totalTotal += parseInt(row.querySelector('td:nth-child(4) input').value) || 0;
-        totalSold += parseInt(row.querySelector('.field-sold').value) || 0;
-        totalRemain += parseInt(row.querySelector('td:nth-child(7) input').value) || 0;
-        totalAmount += parseFloat(row.querySelector('td:nth-child(8) input').value) || 0;
+        var o = parseInt(row.querySelector('.field-open').value) || 0;
+        var od = parseInt(row.querySelector('.field-order').value) || 0;
+        var t = o + od;
+        var bp = parseFloat(row.querySelector('.field-buying-price').value) || 0;
+        var sp = parseFloat(row.querySelector('.field-selling-price').value) || 0;
+        var mv = parseInt(row.querySelector('.field-moved').value) || 0;
+        var rm = t - mv;
+
+        totalOpen += o;
+        totalOrder += od;
+        totalTotal += t;
+        totalMoved += mv;
+        totalRemain += rm;
+        totalBuyingValue += bp * t;
+        totalSellingValue += sp * t;
     });
-    document.getElementById('footerOpen').textContent = totalOpen;
-    document.getElementById('footerOrder').textContent = totalOrder;
-    document.getElementById('footerTotal').textContent = totalTotal;
-    document.getElementById('footerSold').textContent = totalSold;
-    document.getElementById('footerRemain').textContent = totalRemain;
-    document.getElementById('footerAmount').textContent = 'MK ' + totalAmount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    var fmt = function(v) { return v.toLocaleString('en-US', { minimumIntegerDigits: 1 }); };
+    var fmtCurrency = function(v) { return 'MK ' + Math.round(v).toLocaleString('en-US'); };
+
+    document.getElementById('footerOpen').textContent = fmt(totalOpen);
+    document.getElementById('footerOrder').textContent = fmt(totalOrder);
+    document.getElementById('footerTotal').textContent = fmt(totalTotal);
+    document.getElementById('footerBuyingValue').textContent = fmtCurrency(totalBuyingValue);
+    document.getElementById('footerSellingValue').textContent = fmtCurrency(totalSellingValue);
+    document.getElementById('footerMoved').textContent = fmt(totalMoved);
+    document.getElementById('footerRemain').textContent = fmt(totalRemain);
 }
 
-function saveRow(row) {
-    var itemId = row.dataset.itemId;
-    var order = row.querySelector('.field-order').value || 0;
-    var sold = row.querySelector('.field-sold').value || 0;
-    var date = document.getElementById('datePicker').value;
+function setSaveStatus(type, msg) {
+    var el = document.getElementById('saveStatus');
+    el.className = 'save-status ' + type;
+    var icons = { saving: '<i class="fas fa-spinner fa-spin"></i>', saved: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-exclamation-circle"></i>' };
+    el.innerHTML = (icons[type] || icons.saved) + ' ' + msg;
+}
 
-    fetch('{% url "inventory:stock_sheet_save" %}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-        body: JSON.stringify({ item_id: itemId, order_stock: order, sold_stock: sold, date: date })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.success) {
-            row.dataset.id = data.id;
-            row.querySelector('td:nth-child(4) input').value = data.total_stock;
-            row.querySelector('td:nth-child(7) input').value = data.remaining_stock;
-            row.querySelector('td:nth-child(8) input').value = data.total_amount.toFixed(0);
-            recalcFooter();
-        }
-    })
-    .catch(function(err) { console.error('Save failed', err); });
+function transferAllRows() {
+    if (!selectedBranchId) {
+        setSaveStatus('error', 'Please select transfer destination');
+        return;
+    }
+
+    var rows = document.querySelectorAll('#sheetBody .ss-row');
+    var hasMoved = false;
+    var hasError = false;
+    var date = document.getElementById('datePicker').value;
+    var promises = [];
+
+    setSaveStatus('saving', 'Transferring...');
+
+    rows.forEach(function(row) {
+        var itemId = row.dataset.itemId;
+        if (!itemId) return;
+
+        var open_stock = parseInt(row.querySelector('.field-open').value) || 0;
+        var order_stock = parseInt(row.querySelector('.field-order').value) || 0;
+        var moved_stock = parseInt(row.querySelector('.field-moved').value) || 0;
+        var buying_price = parseFloat(row.querySelector('.field-buying-price').value) || 0;
+        var selling_price = parseFloat(row.querySelector('.field-selling-price').value) || 0;
+
+        if (moved_stock > 0) hasMoved = true;
+        if (moved_stock > (open_stock + order_stock)) hasError = true;
+
+        var data = {
+            item_id: parseInt(itemId),
+            open_stock: open_stock,
+            order_stock: order_stock,
+            moved_stock: moved_stock,
+            buying_price: buying_price,
+            selling_price: selling_price,
+            transfer_to_branch_id: selectedBranchId,
+            date: date,
+        };
+
+        promises.push(
+            fetch('{% url "inventory:stock_sheet_save" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(data)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (resp.success) {
+                    row.dataset.id = resp.id;
+                    row.querySelector('.calc-total').value = resp.total_stock;
+                    row.querySelector('.calc-remain').value = resp.remaining_stock;
+                } else {
+                    throw new Error(resp.error || 'Save failed');
+                }
+            })
+            .catch(function(err) { console.error(err); })
+        );
+    });
+
+    if (hasError) {
+        setSaveStatus('error', 'MOVED exceeds TOTAL for some items');
+        return;
+    }
+
+    if (!hasMoved) {
+        setSaveStatus('error', 'No MOVED quantities to transfer');
+        return;
+    }
+
+    Promise.all(promises).then(function() {
+        recalcFooter();
+        setSaveStatus('saved', 'Transferred to ' + selectedBranchName + ' successfully');
+    }).catch(function() {
+        setSaveStatus('error', 'Some items failed to transfer');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Transfer branch toggle buttons
+    document.querySelectorAll('.transfer-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.transfer-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            selectedBranchId = this.dataset.branchId;
+            selectedBranchName = this.dataset.branchName;
+            document.getElementById('transferStatus').textContent = 'Transferring to: ' + selectedBranchName;
+            document.getElementById('transferStatus').style.color = '#4ade80';
+        });
+    });
+
+    // Transfer All button
+    document.getElementById('transferAllBtn').addEventListener('click', transferAllRows);
+
     // Category pills
     document.querySelectorAll('.pill').forEach(function(pill) {
         pill.addEventListener('click', function() {
@@ -292,7 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
             var cat = this.dataset.category;
             currentCategory = cat;
             var date = document.getElementById('datePicker').value;
-
             document.querySelectorAll('.ss-row').forEach(function(row) {
                 if (!cat || row.dataset.category === cat) {
                     row.style.display = '';
@@ -300,55 +513,109 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.style.display = 'none';
                 }
             });
+            document.querySelectorAll('.cat-header').forEach(function(h) {
+                var grp = h.dataset.categoryGroup;
+                if (!cat || grp === cat) {
+                    h.style.display = '';
+                } else {
+                    h.style.display = 'none';
+                }
+            });
             recalcFooter();
+            updateItemCount();
             history.replaceState(null, '', '?date=' + encodeURIComponent(date) + '&category=' + encodeURIComponent(cat));
         });
     });
 
-    // Date picker - full page reload
+    // Date picker
     document.getElementById('datePicker').addEventListener('change', function() {
         var date = this.value;
         var cat = currentCategory;
-        window.location.href = '?date=' + encodeURIComponent(date) + '&category=' + encodeURIComponent(cat);
+        var q = document.getElementById('searchFilter').value;
+        window.location.href = '?date=' + encodeURIComponent(date) + '&category=' + encodeURIComponent(cat) + '&q=' + encodeURIComponent(q);
     });
 
-    // Inline editing: only ORDER and SOLD are editable
-    document.querySelectorAll('.field-order, .field-sold').forEach(function(input) {
+    // Search filter
+    document.getElementById('searchFilter').addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        document.querySelectorAll('.ss-row').forEach(function(row) {
+            var name = row.querySelector('.item-name').textContent.toLowerCase();
+            row.style.display = name.includes(q) ? '' : 'none';
+        });
+        document.querySelectorAll('.cat-header').forEach(function(h) {
+            var visible = false;
+            var next = h.nextElementSibling;
+            while (next && next.classList.contains('ss-row')) {
+                if (next.style.display !== 'none') { visible = true; break; }
+                next = next.nextElementSibling;
+            }
+            h.style.display = visible ? '' : 'none';
+        });
+        recalcFooter();
+        updateItemCount();
+    });
+
+    function updateItemCount() {
+        var visible = 0;
+        document.querySelectorAll('.ss-row').forEach(function(r) { if (r.style.display !== 'none') visible++; });
+        document.getElementById('itemCount').textContent = visible + ' items';
+    }
+
+    // Inline editing for live calculation only (no auto-save)
+    document.querySelectorAll('.ss-row .editable').forEach(function(input) {
         input.addEventListener('input', function() {
             var row = this.closest('.ss-row');
             if (!row) return;
             recalcRow(row);
             recalcFooter();
-
-            var id = row.dataset.itemId;
-            if (saveTimers[id]) clearTimeout(saveTimers[id]);
-            saveTimers[id] = setTimeout(function() { saveRow(row); }, 500);
         });
     });
 
     // Export CSV
     document.getElementById('exportCsvBtn').addEventListener('click', function() {
-        var rows = [['Item','Category','OPEN','ORDER','TOTAL','Selling Price','SOLD','REMAIN','Total Amount']];
+        var header = ['Item','Category','OPEN','ORDER','TOTAL','Buying Price','Selling Price','MOVED','REMAIN'];
+        var rows = [header.join(',')];
         document.querySelectorAll('.ss-row').forEach(function(row) {
             if (row.style.display === 'none') return;
+            var cells = row.querySelectorAll('input');
             var item = row.querySelector('.item-name').textContent.trim().replace(/,/g, '');
             var cat = row.dataset.category;
-            var cells = row.querySelectorAll('input');
             rows.push([
-                item, cat,
+                '"' + item + '"', cat,
                 cells[0].value, cells[1].value, cells[2].value,
-                cells[3].value, cells[4].value, cells[5].value, cells[6].value
+                cells[3].value, cells[4].value, cells[5].value,
+                cells[6].value
             ].join(','));
         });
-        var csv = rows.join('\n');
-        var blob = new Blob([csv], { type: 'text/csv' });
+        var csv = '\ufeff' + rows.join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = 'stock_sheet_' + document.getElementById('datePicker').value + '.csv';
-        a.click();
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+
+    // Export Excel (TSV)
+    document.getElementById('exportExcelBtn').addEventListener('click', function() {
+        var header = ['Item','Category','OPEN','ORDER','TOTAL','Buying Price','Selling Price','MOVED','REMAIN'];
+        var tsvRows = [header.join('\t')];
+        document.querySelectorAll('.ss-row').forEach(function(row) {
+            if (row.style.display === 'none') return;
+            var cells = row.querySelectorAll('input');
+            var item = row.querySelector('.item-name').textContent.trim();
+            var cat = row.dataset.category;
+            tsvRows.push([item, cat, cells[0].value, cells[1].value, cells[2].value, cells[3].value, cells[4].value, cells[5].value, cells[6].value].join('\t'));
+        });
+        var tsv = '\ufeff' + tsvRows.join('\n');
+        var blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'stock_sheet_' + document.getElementById('datePicker').value + '.xls';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
     });
 
     recalcFooter();
+    updateItemCount();
 });
 </script>
 {% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ branch.branch_name }} Dashboard{% endblock %}
+{% block page_title %}{{ branch.branch_name }} Dashboard{% endblock %}
+
+{% block content %}
+<div class="branch-dashboard-header">
+    <div class="branch-info-bar">
+        <div class="branch-avatar-lg">
+            {% if branch.logo %}
+            <img src="{{ branch.logo.url }}" alt="{{ branch.branch_name }}">
+            {% else %}
+            <i class="fas fa-store"></i>
+            {% endif %}
+        </div>
+        <div>
+            <h2>{{ branch.branch_name }}</h2>
+            <span class="badge badge-info">{{ branch.branch_type }}</span>
+            <span class="text-muted" style="margin-left: 10px;">Code: {{ branch.branch_code }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(40, 167, 69, 0.15); color: #28a745;">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Daily Sales</span>
+            <span class="stat-value">MK {{ daily_sales|floatformat:0 }}</span>
+            <span class="stat-detail">{{ daily_sales_count }} transactions</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(0, 123, 255, 0.15); color: #007bff;">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Monthly Sales</span>
+            <span class="stat-value">MK {{ monthly_sales|floatformat:0 }}</span>
+            <span class="stat-detail">{{ monthly_sales_count }} transactions</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(220, 53, 69, 0.15); color: #dc3545;">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Expenses</span>
+            <span class="stat-value">MK {{ today_expenses|floatformat:0 }}</span>
+            <span class="stat-detail">Monthly: MK {{ monthly_expenses|floatformat:0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(255, 193, 7, 0.15); color: #ffc107;">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Stock Value</span>
+            <span class="stat-value">MK {{ stock_value|floatformat:0 }}</span>
+            <span class="stat-detail">{{ total_products }} products</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid-2col">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-line"></i> Stock Sheet Summary</h3>
+        </div>
+        <div class="card-body">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="label">Items Sold</span>
+                    <span class="value">{{ ss_total_sold }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Revenue</span>
+                    <span class="value">MK {{ ss_total_revenue|floatformat:0 }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Remaining</span>
+                    <span class="value">{{ ss_total_remaining }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-crown"></i> Top Selling Items</h3>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr><th>Product</th><th>Qty</th><th>Revenue</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in top_selling %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td>{{ item.total_qty }}</td>
+                        <td>MK {{ item.total_revenue|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted">No sales data</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-exclamation-triangle"></i> Low Stock Alerts</h3>
+    </div>
+    <div class="card-body">
+        {% if low_stock_products %}
+        <table class="table">
+            <thead>
+                <tr><th>Product</th><th>Category</th><th>Stock</th><th>Reorder Level</th></tr>
+            </thead>
+            <tbody>
+                {% for p in low_stock_products %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.category.name|default:'-' }}</td>
+                    <td><span class="badge badge-danger">{{ p.quantity }}</span></td>
+                    <td>{{ p.reorder_level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No low stock items.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-history"></i> Recent Sales</h3>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr><th>Receipt</th><th>Cashier</th><th>Total</th><th>Payment</th><th>Time</th></tr>
+            </thead>
+            <tbody>
+                {% for sale in recent_sales %}
+                <tr>
+                    <td><a href="{% url 'sales:sale_detail' sale.id %}">{{ sale.receipt_number }}</a></td>
+                    <td>{{ sale.cashier.get_full_name|default:sale.cashier.username }}</td>
+                    <td>MK {{ sale.total|floatformat:0 }}</td>
+                    <td>{{ sale.get_payment_method_display }}</td>
+                    <td>{{ sale.created_at|time }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">No recent sales</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.branch-dashboard-header { margin-bottom: 20px; }
+.branch-info-bar { display: flex; align-items: center; gap: 16px; }
+.branch-avatar-lg { width: 70px; height: 70px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; overflow: hidden; }
+.branch-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+.branch-info-bar h2 { margin: 0; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.dashboard-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .dashboard-grid-2col { grid-template-columns: 1fr; } }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.summary-item { text-align: center; padding: 12px; background: var(--bg); border-radius: 8px; }
+.summary-item .label { display: block; font-size: 12px; color: var(--text-muted); }
+.summary-item .value { display: block; font-size: 18px; font-weight: 700; }
+.stat-card { display: flex; align-items: center; gap: 15px; background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+.stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.stat-info .stat-label { font-size: 12px; color: var(--text-muted); display: block; }
+.stat-info .stat-value { font-size: 20px; font-weight: 700; }
+.stat-info .stat-detail { font-size: 11px; color: var(--text-muted); }
+</style>
+{% endblock %}

@@ -3,6 +3,66 @@
 {% block title %}Dashboard - {{ block.super }}{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
+
+{% if all_branches|length > 0 %}
+<div class="branch-tabs">
+    {% if user.profile.role == 'super_admin' %}
+    <form method="post" action="{% url 'branches:switch_branch' %}" class="branch-tab-form">
+        {% csrf_token %}
+        <button type="submit" name="branch_id" value="" class="branch-tab {% if not current_branch %}active{% endif %}">
+            <i class="fas fa-globe-africa"></i>
+            <span>All Branches</span>
+        </button>
+    </form>
+    {% endif %}
+    {% for b in all_branches %}
+    <form method="post" action="{% url 'branches:switch_branch' %}" class="branch-tab-form">
+        {% csrf_token %}
+        <button type="submit" name="branch_id" value="{{ b.id }}" class="branch-tab {% if current_branch and current_branch.id == b.id %}active{% endif %}">
+            <i class="fas fa-{% if b.branch_type == 'Warehouse' %}warehouse{% elif b.branch_type == 'Club' %}music{% elif b.branch_type == 'Bar' %}glass-cheers{% elif b.branch_type == 'Bottle Store' %}wine-bottle{% elif b.branch_type == 'Restaurant' %}utensils{% else %}store{% endif %}"></i>
+            <span>{{ b.branch_name }}</span>
+            {% if current_branch and current_branch.id == b.id %}
+            <span class="branch-tab-active-indicator"></span>
+            {% endif %}
+        </button>
+    </form>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if current_branch %}
+<div class="current-branch-banner">
+    <div class="current-branch-banner-icon">
+        <i class="fas fa-map-marker-alt"></i>
+    </div>
+    <div class="current-branch-banner-info">
+        <span class="current-branch-banner-name">{{ current_branch.branch_name }}</span>
+        <span class="current-branch-banner-meta">{{ current_branch.get_branch_type_display }} &middot; {{ current_branch.branch_code }}</span>
+    </div>
+    <a href="{% url 'branches:branch_dashboard' current_branch.id %}" class="btn btn-sm btn-outline">
+        <i class="fas fa-external-link-alt"></i> Full Dashboard
+    </a>
+</div>
+{% endif %}
+
+{% if not current_branch and branch_revenues %}
+<div class="branch-comparison-grid">
+    {% for br in branch_revenues %}
+    <div class="mini-branch-card">
+        <div class="mini-branch-header">
+            <strong>{{ br.branch.branch_name }}</strong>
+            <span class="badge badge-info">{{ br.branch.branch_code }}</span>
+        </div>
+        <div class="mini-branch-stats">
+            <div><span class="text-muted">Revenue</span> <strong>MK {{ br.revenue|floatformat:0 }}</strong></div>
+            <div><span class="text-muted">Expenses</span> <strong>MK {{ br.expenses|floatformat:0 }}</strong></div>
+            <div><span class="text-muted">Profit</span> <strong class="{% if br.profit >= 0 %}text-success{% else %}text-danger{% endif %}">MK {{ br.profit|floatformat:0 }}</strong></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>

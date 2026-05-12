@@ -16,5 +16,8 @@ urlpatterns = [
     path('stock-sheet/save/', views.stock_sheet_save, name='stock_sheet_save'),
     path('stock-sheet/delete/', views.stock_sheet_delete, name='stock_sheet_delete'),
     path('stock-sheet/data/', views.stock_sheet_data, name='stock_sheet_data'),
+    path('sales-sheet/', views.sales_sheet, name='sales_sheet'),
+    path('sales-sheet/save/', views.sales_sheet_save, name='sales_sheet_save'),
+    path('sales-sheet/data/', views.sales_sheet_data, name='sales_sheet_data'),
     path('api/products-by-category/', views.api_products_by_category, name='api_products_by_category'),
 ]

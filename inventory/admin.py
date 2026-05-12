@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Category, Product, StockSheet
+from .models import Category, Product, StockSheet, SalesSheet
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -85,12 +85,17 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(StockSheet)
 class StockSheetAdmin(admin.ModelAdmin):
-    list_display = ['item', 'date', 'open_stock', 'order_stock', 'total_stock', 'sold_stock', 'remaining_stock', 'total_amount_display']
+    list_display = ['item', 'date', 'open_stock', 'order_stock', 'total_stock', 'buying_price', 'selling_price', 'moved_stock', 'remaining_stock']
     list_filter = ['date', 'category']
     search_fields = ['item__name']
-    readonly_fields = ['total_stock', 'remaining_stock', 'total_amount']
+    readonly_fields = ['total_stock', 'remaining_stock']
     date_hierarchy = 'date'
 
-    @admin.display(description='Total Amount')
-    def total_amount_display(self, obj):
-        return format_html('<strong>MK {:,.0f}</strong>', obj.total_amount)
+
+@admin.register(SalesSheet)
+class SalesSheetAdmin(admin.ModelAdmin):
+    list_display = ['item', 'branch', 'date', 'open_stock', 'add_stock', 'total_stock', 'sold_stock', 'remaining_stock', 'amount']
+    list_filter = ['date', 'branch', 'category']
+    search_fields = ['item__name']
+    readonly_fields = ['total_stock', 'remaining_stock', 'amount']
+    date_hierarchy = 'date'

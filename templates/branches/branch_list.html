@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Branches{% endblock %}
+{% block page_title %}Branch Management{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="content-header-buttons">
+        <a href="{% url 'branches:branch_add' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Branch</a>
+    </div>
+</div>
+
+<div class="branch-grid">
+    {% for branch in branches %}
+    <div class="branch-card {% if not branch.is_active %}inactive{% endif %}">
+        <div class="branch-card-header">
+            <div class="branch-avatar">
+                {% if branch.logo %}
+                <img src="{{ branch.logo.url }}" alt="{{ branch.branch_name }}">
+                {% else %}
+                <i class="fas fa-store"></i>
+                {% endif %}
+            </div>
+            <div class="branch-title">
+                <h3>{{ branch.branch_name }}</h3>
+                <span class="badge badge-{{ branch.branch_type|lower|cut:' ' }}">{{ branch.branch_type }}</span>
+                {% if not branch.is_active %}<span class="badge badge-danger">Inactive</span>{% endif %}
+            </div>
+        </div>
+        <div class="branch-card-body">
+            <div class="branch-code">{{ branch.branch_code }}</div>
+            <div class="branch-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Revenue Today</span>
+                    <span class="stat-value">MK {{ branch.revenue|floatformat:0 }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Products</span>
+                    <span class="stat-value">{{ branch.product_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Active Users</span>
+                    <span class="stat-value">{{ branch.active_users }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Inventory Value</span>
+                    <span class="stat-value">MK {{ branch.inventory_value|floatformat:0 }}</span>
+                </div>
+            </div>
+            {% if branch.phone %}
+            <div class="branch-contact"><i class="fas fa-phone"></i> {{ branch.phone }}</div>
+            {% endif %}
+            {% if branch.email %}
+            <div class="branch-contact"><i class="fas fa-envelope"></i> {{ branch.email }}</div>
+            {% endif %}
+            {% if branch.manager %}
+            <div class="branch-contact"><i class="fas fa-user-tie"></i> {{ branch.manager.get_full_name|default:branch.manager.username }}</div>
+            {% endif %}
+        </div>
+        <div class="branch-card-footer">
+            <a href="{% url 'branches:branch_dashboard' branch.id %}" class="btn btn-sm btn-outline"><i class="fas fa-chart-bar"></i> Dashboard</a>
+            <a href="{% url 'branches:branch_edit' branch.id %}" class="btn btn-sm btn-outline"><i class="fas fa-edit"></i> Edit</a>
+            <form method="post" action="{% url 'branches:switch_branch' %}?branch_id={{ branch.id }}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline"><i class="fas fa-arrow-right"></i> Switch</button>
+            </form>
+            <form method="post" action="{% url 'branches:branch_toggle' branch.id %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-{% if branch.is_active %}danger{% else %}success{% endif %}" onclick="return confirm('{% if branch.is_active %}Deactivate{% else %}Activate{% endif %} {{ branch.branch_name }}?')">
+                    <i class="fas fa-{% if branch.is_active %}ban{% else %}check{% endif %}"></i> {% if branch.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <i class="fas fa-store" style="font-size: 48px; opacity: 0.5;"></i>
+        <h3>No Branches Yet</h3>
+        <p>Create your first branch to start managing multiple locations.</p>
+        <a href="{% url 'branches:branch_add' %}" class="btn btn-primary">Add Branch</a>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.branch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+.branch-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.branch-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.branch-card.inactive { opacity: 0.6; }
+.branch-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.branch-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    overflow: hidden;
+}
+.branch-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.branch-title h3 { margin: 0; font-size: 18px; }
+.branch-card-body { padding: 20px; }
+.branch-code {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: monospace;
+    margin-bottom: 12px;
+}
+.branch-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.stat-item {
+    background: var(--bg);
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+.stat-label { display: block; font-size: 11px; color: var(--text-muted); }
+.stat-value { display: block; font-size: 14px; font-weight: 700; }
+.branch-contact {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0;
+}
+.branch-contact i { width: 20px; }
+.branch-card-footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+.branch-card-footer .btn { font-size: 12px; }
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+}
+</style>
+{% endblock %}

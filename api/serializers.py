@@ -4,6 +4,7 @@ from sales.models import Sale, SaleItem
 from expenses.models import Expense, ExpenseCategory
 from suppliers.models import Supplier, Purchase
 from accounts.models import Profile, ActivityLog
+from branches.models import Branch, StockTransfer
 from django.contrib.auth.models import User
 
 
@@ -30,6 +31,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    branch_name = serializers.CharField(source='branch.branch_name', read_only=True, allow_null=True)
     total_crates = serializers.IntegerField(read_only=True)
     total_bottles = serializers.IntegerField(read_only=True)
     display_stock = serializers.CharField(read_only=True)
@@ -47,6 +49,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
 class SaleSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, read_only=True)
     cashier_name = serializers.CharField(source='cashier.username', read_only=True)
+    branch_name = serializers.CharField(source='branch.branch_name', read_only=True, allow_null=True)
     class Meta:
         model = Sale
         fields = '__all__'
@@ -61,6 +64,7 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
 class ExpenseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     paid_by_name = serializers.CharField(source='paid_by.username', read_only=True)
+    branch_name = serializers.CharField(source='branch.branch_name', read_only=True, allow_null=True)
     class Meta:
         model = Expense
         fields = '__all__'
@@ -76,6 +80,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
     purchased_by_name = serializers.CharField(source='purchased_by.username', read_only=True)
+    branch_name = serializers.CharField(source='branch.branch_name', read_only=True, allow_null=True)
     class Meta:
         model = Purchase
         fields = '__all__'
@@ -85,4 +90,20 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = ActivityLog
+        fields = '__all__'
+
+
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = '__all__'
+
+
+class StockTransferSerializer(serializers.ModelSerializer):
+    from_branch_name = serializers.CharField(source='from_branch.branch_name', read_only=True)
+    to_branch_name = serializers.CharField(source='to_branch.branch_name', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    requested_by_name = serializers.CharField(source='requested_by.username', read_only=True)
+    class Meta:
+        model = StockTransfer
         fields = '__all__'

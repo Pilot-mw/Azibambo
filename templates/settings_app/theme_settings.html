@@ -1,0 +1,204 @@
+<div class="theme-settings">
+    <div class="card">
+        <div class="card-header branch-theme-gradient" style="color:#fff;">
+            <span><i class="fas fa-palette"></i> Branch Theme Customization</span>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--text-muted);margin-bottom:1.5rem;">
+                Customize colors and appearance for each branch. Changes apply instantly after saving.
+            </p>
+            {% for branch in branches %}
+            <form method="post" class="theme-branch-card" data-branch-id="{{ branch.id }}">
+                {% csrf_token %}
+                <input type="hidden" name="branch_id" value="{{ branch.id }}">
+                <div class="theme-branch-header" style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-color);">
+                    <span class="branch-color-dot" style="background:{{ branch.theme_color }};width:16px;height:16px;"></span>
+                    <strong style="font-size:1.05rem;">{{ branch.branch_name }}</strong>
+                    <span class="badge badge-info">{{ branch.branch_code }}</span>
+                    <div class="theme-live-preview" style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Preview</span>
+                        <div class="preview-box" style="width:24px;height:24px;border-radius:4px;background:{{ branch.sidebar_bg }};border:1px solid var(--border-color);" title="Sidebar"></div>
+                        <div class="preview-box" style="width:24px;height:24px;border-radius:4px;background:{{ branch.theme_color }};border:1px solid var(--border-color);" title="Primary"></div>
+                        <div class="preview-box" style="width:24px;height:24px;border-radius:4px;background:{{ branch.header_bg }};border:1px solid var(--border-color);" title="Header"></div>
+                    </div>
+                </div>
+                <div class="theme-fields-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+                    <div class="theme-field">
+                        <label>Primary Color</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="theme_color" value="{{ branch.theme_color }}" class="theme-color-picker">
+                            <input type="text" name="theme_color_hex" value="{{ branch.theme_color }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Secondary Color</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="secondary_color" value="{{ branch.secondary_color }}" class="theme-color-picker">
+                            <input type="text" name="secondary_color_hex" value="{{ branch.secondary_color }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Sidebar Background</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="sidebar_bg" value="{{ branch.sidebar_bg }}" class="theme-color-picker">
+                            <input type="text" name="sidebar_bg_hex" value="{{ branch.sidebar_bg }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Sidebar Text</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="sidebar_text" value="{{ branch.sidebar_text }}" class="theme-color-picker">
+                            <input type="text" name="sidebar_text_hex" value="{{ branch.sidebar_text }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Header Background</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="header_bg" value="{{ branch.header_bg }}" class="theme-color-picker">
+                            <input type="text" name="header_bg_hex" value="{{ branch.header_bg }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Header Text</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="header_text" value="{{ branch.header_text }}" class="theme-color-picker">
+                            <input type="text" name="header_text_hex" value="{{ branch.header_text }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Logo Background</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="logo_background_color" value="{{ branch.logo_background_color }}" class="theme-color-picker">
+                            <input type="text" name="logo_background_color_hex" value="{{ branch.logo_background_color }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Selection/Highlight BG</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="selection_bg" value="{{ branch.selection_bg }}" class="theme-color-picker">
+                            <input type="text" name="selection_bg_hex" value="{{ branch.selection_bg }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Selection/Highlight Text</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="selection_text" value="{{ branch.selection_text }}" class="theme-color-picker">
+                            <input type="text" name="selection_text_hex" value="{{ branch.selection_text }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Button Color</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="button_color" value="{{ branch.button_color }}" class="theme-color-picker">
+                            <input type="text" name="button_color_hex" value="{{ branch.button_color }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Card Accent</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="card_accent" value="{{ branch.card_accent }}" class="theme-color-picker">
+                            <input type="text" name="card_accent_hex" value="{{ branch.card_accent }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Widget BG</label>
+                        <div class="theme-input-group">
+                            <input type="color" name="widget_bg" value="{{ branch.widget_bg }}" class="theme-color-picker">
+                            <input type="text" name="widget_bg_hex" value="{{ branch.widget_bg }}" class="form-input theme-hex-input" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-field">
+                        <label>Theme Mode</label>
+                        <select name="theme_mode" class="form-select">
+                            <option value="dark" {% if branch.theme_mode == 'dark' %}selected{% endif %}>Dark</option>
+                            <option value="light" {% if branch.theme_mode == 'light' %}selected{% endif %}>Light</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:1rem;display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" class="btn btn-outline btn-sm theme-reset-btn" data-branch-id="{{ branch.id }}">
+                        <i class="fas fa-undo"></i> Reset to Default
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm branch-theme-btn">
+                        <i class="fas fa-save"></i> Save Theme
+                    </button>
+                </div>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.theme-branch-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--card-shadow);
+}
+.theme-field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.theme-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.theme-color-picker {
+    width: 38px;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    background: none;
+}
+.theme-hex-input {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+.theme-live-preview .preview-box {
+    transition: background 0.2s;
+}
+</style>
+
+<script>
+document.querySelectorAll('.theme-color-picker').forEach(function(picker) {
+    picker.addEventListener('input', function() {
+        var hexInput = this.closest('.theme-input-group').querySelector('.theme-hex-input');
+        if (hexInput) hexInput.value = this.value;
+        updatePreview(this.closest('.theme-branch-card'));
+    });
+});
+document.querySelectorAll('.theme-hex-input').forEach(function(input) {
+    input.addEventListener('input', function() {
+        if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+            var colorPicker = this.closest('.theme-input-group').querySelector('.theme-color-picker');
+            if (colorPicker) colorPicker.value = this.value;
+            updatePreview(this.closest('.theme-branch-card'));
+        }
+    });
+});
+function updatePreview(card) {
+    if (!card) return;
+    var previews = card.querySelectorAll('.theme-live-preview .preview-box');
+    if (previews.length >= 3) {
+        var sidebarBg = card.querySelector('[name="sidebar_bg"]') || card.querySelector('[name="sidebar_bg_hex"]');
+        var primary = card.querySelector('[name="theme_color"]') || card.querySelector('[name="theme_color_hex"]');
+        var headerBg = card.querySelector('[name="header_bg"]') || card.querySelector('[name="header_bg_hex"]');
+        if (sidebarBg) previews[0].style.background = sidebarBg.value || sidebarBg._value || '#1e293b';
+        if (primary) previews[1].style.background = primary.value || primary._value || '#2563eb';
+        if (headerBg) previews[2].style.background = headerBg.value || headerBg._value || '#ffffff';
+    }
+}
+</script>

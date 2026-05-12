@@ -5,12 +5,14 @@ from sales.models import Sale, SaleItem
 from expenses.models import Expense, ExpenseCategory
 from suppliers.models import Supplier, Purchase
 from accounts.models import Profile, ActivityLog
+from branches.models import Branch, StockTransfer
 from django.contrib.auth.models import User
 from .serializers import (
     UserSerializer, ProfileSerializer, CategorySerializer,
     ProductSerializer, SaleSerializer, SaleItemSerializer,
     ExpenseCategorySerializer, ExpenseSerializer,
-    SupplierSerializer, PurchaseSerializer, ActivityLogSerializer
+    SupplierSerializer, PurchaseSerializer, ActivityLogSerializer,
+    BranchSerializer, StockTransferSerializer,
 )
 
 
@@ -49,7 +51,7 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SaleSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status', 'payment_method', 'cashier']
+    filterset_fields = ['status', 'payment_method', 'cashier', 'branch']
     ordering_fields = ['created_at', 'total']
 
 
@@ -72,7 +74,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['category', 'paid_by']
+    filterset_fields = ['category', 'paid_by', 'branch']
     ordering_fields = ['date', 'amount']
 
 
@@ -89,7 +91,7 @@ class PurchaseViewSet(viewsets.ModelViewSet):
     serializer_class = PurchaseSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['supplier', 'product', 'purchased_by']
+    filterset_fields = ['supplier', 'product', 'purchased_by', 'branch']
     ordering_fields = ['date', 'total_amount']
 
 
@@ -99,3 +101,20 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     ordering_fields = ['created_at']
     ordering = ['-created_at']
+
+
+class BranchViewSet(viewsets.ModelViewSet):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    permission_classes = [permissions.IsAdminUser]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['branch_name', 'branch_code']
+
+
+class StockTransferViewSet(viewsets.ModelViewSet):
+    queryset = StockTransfer.objects.all()
+    serializer_class = StockTransferSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'from_branch', 'to_branch']
+    ordering_fields = ['created_at']

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Category, StockSheet
+from .models import Product, Category, StockSheet, SalesSheet
 
 
 class CategoryForm(forms.ModelForm):
@@ -43,16 +43,32 @@ class ProductForm(forms.ModelForm):
         }
 
 
+class SalesSheetForm(forms.ModelForm):
+    class Meta:
+        model = SalesSheet
+        fields = ['item', 'category', 'open_stock', 'add_stock', 'selling_price', 'sold_stock', 'date']
+        widgets = {
+            'item': forms.Select(attrs={'class': 'form-input'}),
+            'category': forms.Select(attrs={'class': 'form-input'}),
+            'open_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'open'}),
+            'add_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'add'}),
+            'selling_price': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'data-field': 'selling_price'}),
+            'sold_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'sold'}),
+            'date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
+        }
+
+
 class StockSheetForm(forms.ModelForm):
     class Meta:
         model = StockSheet
-        fields = ['item', 'category', 'open_stock', 'order_stock', 'selling_price', 'sold_stock', 'date']
+        fields = ['item', 'category', 'open_stock', 'order_stock', 'buying_price', 'selling_price', 'moved_stock', 'date']
         widgets = {
             'item': forms.Select(attrs={'class': 'form-input'}),
             'category': forms.Select(attrs={'class': 'form-input'}),
             'open_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'open'}),
             'order_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'order'}),
-            'selling_price': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'data-field': 'price'}),
-            'sold_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'sold'}),
+            'buying_price': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'data-field': 'buying_price'}),
+            'selling_price': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'data-field': 'selling_price'}),
+            'moved_stock': forms.NumberInput(attrs={'class': 'form-input', 'data-field': 'moved'}),
             'date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
         }

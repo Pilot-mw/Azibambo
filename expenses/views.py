@@ -7,16 +7,27 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Expense, ExpenseCategory
 from .forms import ExpenseForm, ExpenseCategoryForm
+from accounts.decorators import role_required
 from accounts.models import ActivityLog
 
+
+def _get_branch_filter(request):
+    branch = getattr(request, 'current_branch', None)
+    if branch:
+        return {'branch': branch}, branch
+    return {}, None
+
+
 @login_required
+@role_required('super_admin', 'manager')
 def expense_list(request):
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    branch_filter, current_branch = _get_branch_filter(request)
 
-    expenses = Expense.objects.select_related('category', 'paid_by')
+    expenses = Expense.objects.select_related('category', 'paid_by').filter(**branch_filter)
 
     if query:
         expenses = expenses.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -40,22 +51,27 @@ def expense_list(request):
         'total_amount': total_amount,
         'query': query,
         'selected_category': category_id,
+        'current_branch': current_branch,
     }
     return render(request, 'expenses/expense_list.html', context)
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def expense_add(request):
     if request.method == 'POST':
         form = ExpenseForm(request.POST, request.FILES)
         if form.is_valid():
             expense = form.save(commit=False)
             expense.paid_by = request.user
+            expense.branch = getattr(request, 'current_branch', None)
             expense.save()
             ActivityLog.objects.create(
                 user=request.user,
                 action=f'Added expense: {expense.title}',
                 model_name='Expense',
                 object_id=expense.id,
+                branch=getattr(request, 'current_branch', None),
                 ip_address=request.META.get('REMOTE_ADDR')
             )
             messages.success(request, 'Expense added successfully!')
@@ -64,7 +80,9 @@ def expense_add(request):
         form = ExpenseForm()
     return render(request, 'expenses/expense_form.html', {'form': form, 'title': 'Add Expense'})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def expense_edit(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     if request.method == 'POST':
@@ -77,7 +95,9 @@ def expense_edit(request, pk):
         form = ExpenseForm(instance=expense)
     return render(request, 'expenses/expense_form.html', {'form': form, 'title': 'Edit Expense'})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def expense_delete(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     if request.method == 'POST':
@@ -86,12 +106,16 @@ def expense_delete(request, pk):
         return redirect('expenses:expense_list')
     return render(request, 'expenses/expense_confirm_delete.html', {'expense': expense})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def category_list(request):
     categories = ExpenseCategory.objects.all()
     return render(request, 'expenses/category_list.html', {'categories': categories})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def category_add(request):
     if request.method == 'POST':
         form = ExpenseCategoryForm(request.POST)
@@ -103,7 +127,9 @@ def category_add(request):
         form = ExpenseCategoryForm()
     return render(request, 'expenses/category_form.html', {'form': form, 'title': 'Add Category'})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def category_edit(request, pk):
     category = get_object_or_404(ExpenseCategory, pk=pk)
     if request.method == 'POST':
@@ -116,7 +142,9 @@ def category_edit(request, pk):
         form = ExpenseCategoryForm(instance=category)
     return render(request, 'expenses/category_form.html', {'form': form, 'title': 'Edit Category'})
 
+
 @login_required
+@role_required('super_admin', 'manager')
 def category_delete(request, pk):
     category = get_object_or_404(ExpenseCategory, pk=pk)
     if request.method == 'POST':

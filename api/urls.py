@@ -14,6 +14,8 @@ router.register(r'expenses', views.ExpenseViewSet)
 router.register(r'suppliers', views.SupplierViewSet)
 router.register(r'purchases', views.PurchaseViewSet)
 router.register(r'activity-logs', views.ActivityLogViewSet)
+router.register(r'branches', views.BranchViewSet)
+router.register(r'stock-transfers', views.StockTransferViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

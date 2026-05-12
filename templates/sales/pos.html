@@ -2,7 +2,368 @@
 {% load static %}
 {% block title %}Point of Sale - {{ block.super }}{% endblock %}
 {% block page_title %}Point of Sale{% endblock %}
+{% block extra_css %}
+<style>
+:root {
+    --pos-modal-bg: #0f1729;
+    --pos-modal-card: #1e293b;
+    --pos-modal-border: #2d3a4a;
+    --pos-text: #ffffff;
+    --pos-text-muted: #94a3b8;
+    --pos-accent: var(--branch-primary, #f97316);
+    --pos-accent-dark: var(--branch-secondary, #ea580c);
+    --pos-input-bg: #0f1729;
+    --pos-success: #4ade80;
+    --pos-blue: #93c5fd;
+    --pos-yellow: #fde047;
+}
+.pos-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    padding: 1rem;
+}
+.pos-overlay.active {
+    display: flex;
+}
+.pos-modal {
+    background: var(--pos-modal-card);
+    border: 1px solid var(--pos-modal-border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    overflow: hidden;
+    animation: modalSlideUp 0.25s ease-out;
+}
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pos-modal-header {
+    background: linear-gradient(135deg, var(--pos-accent), var(--pos-accent-dark));
+    padding: 1.25rem 1.5rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.pos-modal-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+}
+.pos-modal-header .price-tag {
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0.95;
+    background: rgba(255,255,255,0.15);
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+.pos-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0 0.25rem;
+    line-height: 1;
+}
+.pos-modal-close:hover { opacity: 1; }
+
+.pos-modal-body { padding: 1.5rem; }
+
+.total-stock-display {
+    background: var(--pos-input-bg);
+    border: 1px solid var(--pos-modal-border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+.total-stock-display .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pos-text-muted);
+    margin-bottom: 0.3rem;
+}
+.total-stock-display .value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pos-yellow);
+}
+.total-stock-display .sub {
+    font-size: 0.85rem;
+    color: var(--pos-text-muted);
+    margin-top: 0.25rem;
+}
+
+.remaining-section h3, .calc-section h3 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pos-text-muted);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--pos-modal-border);
+}
+.remaining-section { margin-bottom: 1.25rem; }
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+.input-row label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--pos-text);
+    min-width: 150px;
+    flex-shrink: 0;
+}
+.input-row input {
+    flex: 1;
+    padding: 0.7rem 0.8rem;
+    background: var(--pos-input-bg);
+    border: 2px solid var(--pos-modal-border);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.2s;
+    outline: none;
+    -moz-appearance: textfield;
+}
+.input-row input::-webkit-outer-spin-button,
+.input-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.input-row input:focus {
+    border-color: var(--pos-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos-accent) 25%, transparent);
+    background: #1a2744;
+}
+.input-row input.error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.25) !important;
+}
+
+.conversion-display {
+    background: var(--pos-input-bg);
+    border: 1px solid var(--pos-modal-border);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    min-height: 2.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--pos-text);
+}
+.conversion-display .conv-packs,
+.conversion-display .conv-crates {
+    color: var(--pos-accent);
+}
+.conversion-display .conv-bottles {
+    color: var(--pos-blue);
+}
+.conversion-display .conv-sep {
+    color: var(--pos-text-muted);
+    font-weight: 400;
+}
+
+.calc-results {
+    background: var(--pos-input-bg);
+    border: 1px solid var(--pos-modal-border);
+    border-radius: 10px;
+    padding: 1rem;
+}
+.calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+}
+.calc-row + .calc-row {
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.calc-row .calc-label {
+    font-size: 0.85rem;
+    color: var(--pos-text-muted);
+}
+.calc-row .calc-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.calc-row .calc-value.sold { color: var(--pos-success); }
+.calc-row .calc-value.amount { color: var(--pos-blue); }
+.calc-row .calc-value.remain { color: var(--pos-yellow); }
+.calc-row.highlight .calc-value {
+    font-size: 1.3rem;
+}
+
+.pos-modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--pos-modal-border);
+}
+.pos-modal-footer .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 10px;
+}
+.pos-modal-footer .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.sales-session-list { max-height: 250px; overflow-y: auto; }
+.sales-session-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.85rem;
+}
+.sales-session-item:last-child { border-bottom: none; }
+.sales-session-item .item-info { flex: 1; }
+.sales-session-item .item-name { font-weight: 600; color: #fff; }
+.sales-session-item .item-detail { font-size: 0.75rem; color: var(--pos-text-muted); }
+.sales-session-item .item-amount {
+    font-weight: 700;
+    color: var(--pos-blue);
+    text-align: right;
+}
+.sales-session-total {
+    background: var(--pos-input-bg);
+    padding: 0.8rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1rem;
+    border-top: 1px solid var(--pos-modal-border);
+}
+.sales-session-total span:last-child { color: var(--pos-blue); }
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s ease-out;
+    display: none;
+}
+.toast.success { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+.toast.error { background: #450a0a; color: #fca5a5; border: 1px solid #ef4444; }
+@keyframes toastIn {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.pos-container { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; }
+.pos-cart { position: sticky; top: 5rem; }
+.pos-cart .card {
+    background: var(--pos-modal-card);
+    border-color: var(--pos-modal-border);
+}
+.pos-cart .card-header { color: #fff; }
+.pos-cart .card-body { color: var(--pos-text); }
+
+.conv-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.3rem;
+}
+.conv-tag.pack { background: rgba(249,115,22,0.2); color: var(--pos-accent); }
+.conv-tag.crate { background: rgba(147,197,253,0.2); color: var(--pos-blue); }
+</style>
+{% endblock %}
 {% block content %}
+<div class="toast" id="toast"></div>
+
+<!-- Remaining Stock Modal -->
+<div class="pos-overlay" id="stockModal">
+    <div class="pos-modal">
+        <div class="pos-modal-header">
+            <div>
+                <h2 id="modalProductName">—</h2>
+                <span class="price-tag" id="modalProductPrice">MK 0</span>
+            </div>
+            <button class="pos-modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="pos-modal-body">
+            <div class="total-stock-display">
+                <div class="label">TOTAL STOCK</div>
+                <div class="value" id="totalStockText">—</div>
+                <div class="sub" id="totalStockConverted"></div>
+            </div>
+
+            <div class="remaining-section" id="bottleSection">
+                <h3>Enter Remaining Stock</h3>
+                <div class="input-row" id="inputRow1">
+                    <label id="inputLabel1">Bottles Remaining:</label>
+                    <input type="number" id="remainingInput1" class="remaining-input" min="0" value="0" placeholder="0">
+                </div>
+                <div class="input-row" id="inputRowShots" style="display:none;">
+                    <label>Shots Remaining:</label>
+                    <input type="number" id="remainingShots" class="remaining-input" min="0" value="0" placeholder="0">
+                </div>
+            </div>
+
+            <div class="remaining-section" id="wineSection" style="display:none;">
+                <h3>Enter Remaining Stock</h3>
+                <div class="input-row">
+                    <label>Glasses Remaining:</label>
+                    <input type="number" id="wineRemainingGlasses" class="remaining-input" min="0" value="0" placeholder="0">
+                </div>
+            </div>
+
+            <div class="calc-results">
+                <h3>Auto Calculated</h3>
+                <div class="calc-row highlight">
+                    <span class="calc-label">Sold</span>
+                    <span class="calc-value sold" id="calcSold">0</span>
+                </div>
+                <div class="calc-row">
+                    <span class="calc-label">Revenue Amount</span>
+                    <span class="calc-value amount" id="calcAmount">MK 0</span>
+                </div>
+            </div>
+        </div>
+        <div class="pos-modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn branch-theme-bg" id="saveSaleBtn" style="color:#fff;" disabled>Save Sale</button>
+        </div>
+    </div>
+</div>
+
 <div class="pos-container">
     <div>
         <div class="search-bar">
@@ -10,39 +371,53 @@
             <select id="categoryFilter" class="form-select">
                 <option value="">All Categories</option>
                 {% for cat in categories %}
-                <option value="{{ cat.category__name }}">{{ cat.category__name }}</option>
+                <option value="{{ cat.name }}">{{ cat.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="pos-products" id="productGrid">
             {% for product in products %}
-            <div class="pos-product" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.selling_price }}" data-stock="{{ product.quantity }}" data-category="{{ product.category.name }}" data-unit="{{ product.unit_type }}" data-per-crate="{{ product.units_per_crate }}" data-crates="{{ product.crate_quantity }}" data-per-pack="{{ product.units_per_pack }}" data-packs="{{ product.pack_quantity }}" data-bottles="{{ product.bottle_quantity }}" data-shots-per-bottle="{{ product.shots_per_bottle }}" data-shot-quantity="{{ product.shot_quantity }}">
+            <div class="pos-product"
+                data-id="{{ product.id }}"
+                data-name="{{ product.name }}"
+                data-price="{{ product.selling_price }}"
+                data-stock="{{ product.quantity }}"
+                data-category="{{ product.category.name }}"
+                data-unit="{{ product.unit_type }}"
+                data-pack-size="{{ product.pack_size|default:6 }}"
+                data-crate-size="{{ product.crate_size|default:20 }}"
+                data-packs="{{ product.pack_quantity }}"
+                data-bottles="{{ product.bottle_quantity }}"
+                data-shots-per-bottle="{{ product.shots_per_bottle }}"
+                data-shot-quantity="{{ product.shot_quantity }}"
+                data-liters-per-unit="{{ product.liters_per_unit }}"
+                data-glasses-per-liter="{{ product.glasses_per_liter }}"
+                data-conversion-rate="{{ product.conversion_rate }}"
+                data-purchase-unit="{{ product.purchase_unit }}"
+                data-selling-unit="{{ product.selling_unit_label }}">
                 <div class="name">{{ product.name }}</div>
                 <div class="price">{{ site_settings.currency }} {{ product.selling_price|floatformat:0 }}</div>
-                <div class="stock">
-                    {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
-                    Stock: {{ product.crate_quantity }} Crates ({{ product.quantity }} Bottles)
-                    {% elif product.unit_type == 'Pack' and product.units_per_pack > 1 %}
-                    Stock: {{ product.pack_quantity }} Packs ({{ product.quantity }} Bottles/Cans)
-                    {% elif product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
-                    Stock: {{ product.bottle_quantity }} Bottles ({{ product.quantity }} Shots)
-                    {% else %}
-                    Stock: {{ product.quantity }}
-                    {% endif %}
-                </div>
-                {% if product.unit_type == 'Crate' and product.units_per_crate > 1 %}
+                <div class="stock">{% if product.unit_type == 'wine_glass' %}{{ product.quantity }} Glasses{% else %}{{ product.quantity }} Bottles{% endif %}</div>
+                {% with ps=product.pack_size|default:6 cs=product.crate_size|default:20 %}
+                {% if product.unit_type == 'Pack' and ps > 1 %}
                 <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
-                    <span class="badge badge-info">1 Crate = {{ product.units_per_crate }} Bottles</span>
+                    <span class="badge badge-info">1 Pack = {{ ps }} Bottles</span>
                 </div>
                 {% endif %}
-                {% if product.unit_type == 'Pack' and product.units_per_pack > 1 %}
+                {% if product.unit_type == 'Crate' and cs > 1 %}
                 <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
-                    <span class="badge badge-info">1 Pack = {{ product.units_per_pack }} Bottles/Cans</span>
+                    <span class="badge badge-info">1 Crate = {{ cs }} Bottles</span>
                 </div>
                 {% endif %}
-                {% if product.unit_type == 'Bottle' and product.shots_per_bottle > 1 %}
+                {% endwith %}
+                {% if product.unit_type == 'wine_glass' %}
                 <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
-                    <span class="badge badge-info">1 Bottle = {{ product.shots_per_bottle }} Shots</span>
+                    <span class="badge badge-info">5L Wine — 1 Container = 28 Glasses</span>
+                </div>
+                {% endif %}
+                {% if product.shots_per_bottle > 1 %}
+                <div class="unit-badge" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                    <span class="badge badge-info">Manual Shots Entry</span>
                 </div>
                 {% endif %}
             </div>
@@ -51,33 +426,18 @@
     </div>
     <div class="pos-cart">
         <div class="card">
-            <div class="card-header"><i class="fas fa-shopping-cart"></i> Cart</div>
-            <div class="card-body">
-                <div class="cart-items" id="cartItems"></div>
-                <div class="cart-total">
-                    <div class="row"><span>Subtotal</span><span id="subtotal">MK 0.00</span></div>
-                    <div class="row" style="font-weight:700;font-size:1.1rem;"><span>Total</span><span id="total">MK 0.00</span></div>
+            <div class="card-header branch-theme-gradient"><i class="fas fa-receipt"></i> Today's Sales</div>
+            <div class="card-body" style="padding:0;">
+                <div class="sales-session-list" id="sessionList">
+                    <p class="text-muted" style="text-align:center;padding:2rem 1rem;font-size:0.85rem;">
+                        <i class="fas fa-box-open" style="font-size:1.2rem;display:block;margin-bottom:0.5rem;opacity:0.5;"></i>
+                        No sales yet. Select a product above.
+                    </p>
                 </div>
-                <div class="form-group">
-                    <label>Payment Method</label>
-                    <select id="paymentMethod" class="form-select">
-                        <option value="cash">Cash</option>
-                        <option value="airtel_money">Airtel Money</option>
-                        <option value="tnm_mpamba">TNM Mpamba</option>
-                        <option value="card">Card</option>
-                    </select>
+                <div class="sales-session-total">
+                    <span>Total Revenue</span>
+                    <span id="sessionTotal">MK 0</span>
                 </div>
-                <div class="form-group">
-                    <label>Amount Paid</label>
-                    <input type="number" id="amountPaid" class="form-input" value="0" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Change Due</label>
-                    <div id="changeDue" style="font-size:1.3rem;font-weight:700;color:var(--success);">MK 0.00</div>
-                </div>
-                <button id="checkoutBtn" class="btn btn-success btn-lg" style="width:100%;justify-content:center;" disabled>
-                    <i class="fas fa-check"></i> Complete Sale
-                </button>
             </div>
         </div>
     </div>
@@ -85,7 +445,6 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-var cart = [];
 var products = {};
 {% for product in products %}
 products[{{ product.id }}] = {
@@ -93,193 +452,318 @@ products[{{ product.id }}] = {
     price: {{ product.selling_price }},
     stock: {{ product.quantity }},
     unitType: '{{ product.unit_type }}',
-    perCrate: {{ product.units_per_crate }},
-    crates: {{ product.crate_quantity }},
-    perPack: {{ product.units_per_pack }},
+    packSize: {{ product.pack_size|default:6 }},
+    crateSize: {{ product.crate_size|default:20 }},
     packs: {{ product.pack_quantity }},
     shotsPerBottle: {{ product.shots_per_bottle }},
     shots: {{ product.shot_quantity }},
     bottles: {{ product.bottle_quantity }},
-    sellingUnit: '{{ product.selling_unit }}'
+    litersPerUnit: {{ product.liters_per_unit|default:5 }},
+    glassesPerLiter: {{ product.glasses_per_liter|default:28 }},
+    conversionRate: {{ product.conversion_rate|default:1 }},
+    purchaseUnit: '{{ product.warehouse_unit_type }}',
+    sellingUnit: '{{ product.selling_unit_label }}'
 };
 {% endfor %}
 
+var currentProductId = null;
+var sessionItems = [];
+var sessionTotal = 0;
+
+
+
+// ── Product Click → Open Modal ──────────────────────────────
 document.querySelectorAll('.pos-product').forEach(function(el) {
     el.addEventListener('click', function() {
         var id = parseInt(this.dataset.id);
-        addToCart(id);
+        openStockModal(id);
     });
 });
 
-function addToCart(id) {
+function openStockModal(id) {
     var p = products[id];
-    var existing = cart.find(function(item) { return item.id === id; });
-    if (existing) {
-        existing.qty++;
+    if (!p) return;
+    currentProductId = id;
+
+    document.getElementById('modalProductName').textContent = p.name;
+    document.getElementById('modalProductPrice').textContent = 'MK ' + Number(p.price).toLocaleString('en-US');
+
+    var packSize = p.packSize || 6;
+    var crateSize = p.crateSize || 20;
+    var shotsPerBottle = p.shotsPerBottle || 1;
+
+    var isWine = (p.unitType === 'wine_glass');
+
+    if (isWine) {
+        var litersPerUnit = p.litersPerUnit || 5;
+        var glassesPerLiter = p.glassesPerLiter || 28;
+        var totalGlasses = p.stock;
+        var totalLiters = Math.floor(totalGlasses / glassesPerLiter) * litersPerUnit;
+        document.getElementById('totalStockText').textContent = totalGlasses + ' Glasses';
+        document.getElementById('totalStockConverted').innerHTML = '<span style="color:var(--pos-text-muted);">' + totalLiters + ' Liters</span>';
+
+        document.getElementById('bottleSection').style.display = 'none';
+        document.getElementById('wineSection').style.display = 'block';
+
+        document.getElementById('wineRemainingGlasses').value = 0;
+        document.getElementById('wineRemainingGlasses').classList.remove('error');
     } else {
-        var unit = p.sellingUnit;
-        cart.push({
-            id: id,
-            name: p.name,
-            price: p.price,
-            qty: 1,
-            stock: p.stock,
-            unitType: p.unitType,
-            perCrate: p.perCrate,
-            sellingUnit: unit
-        });
-    }
-    renderCart();
-}
+        var totalText = p.stock + ' Bottles';
+        document.getElementById('totalStockText').textContent = totalText;
+        document.getElementById('totalStockConverted').innerHTML = '';
 
-function removeFromCart(id) {
-    cart = cart.filter(function(item) { return item.id !== id; });
-    renderCart();
-}
+        document.getElementById('bottleSection').style.display = 'block';
+        document.getElementById('wineSection').style.display = 'none';
 
-function updateQty(id, qty) {
-    var item = cart.find(function(i) { return i.id === id; });
-    if (!item) return;
-    qty = parseInt(qty);
-    if (qty <= 0) { removeFromCart(id); return; }
-    var perUnit = item.sellingUnit === 'Crate' ? item.perCrate : (item.sellingUnit === 'Pack' ? item.perPack : 1);
-    var bottleQty = qty * perUnit;
-    if (bottleQty > item.stock) {
-        var maxBottle = item.stock;
-        var maxQty = perUnit > 1 ? Math.floor(maxBottle / perUnit) : maxBottle;
-        alert('Not enough stock! Max ' + maxQty + ' ' + item.sellingUnit + (maxQty > 1 ? 's' : ''));
-        qty = maxQty;
-    }
-    if (qty <= 0) { removeFromCart(id); return; }
-    item.qty = qty;
-    renderCart();
-}
+        document.getElementById('inputRow1').style.display = 'flex';
+        document.getElementById('inputLabel1').textContent = 'Bottles Remaining:';
 
-function toggleUnit(id) {
-    var item = cart.find(function(i) { return i.id === id; });
-    if (!item) return;
-    if (item.unitType === 'Crate') {
-        var newUnit = item.sellingUnit === 'Bottle' ? 'Crate' : 'Bottle';
-        var bottlesUsed = item.sellingUnit === 'Crate' ? item.qty * item.perCrate : item.qty;
-        if (newUnit === 'Crate') {
-            var newQty = Math.floor(bottlesUsed / item.perCrate);
-            if (newQty === 0) { alert('Not enough bottles for 1 crate (' + item.perCrate + ' needed)'); return; }
-            item.qty = newQty;
+        var shotsRow = document.getElementById('inputRowShots');
+        if (shotsPerBottle > 1) {
+            shotsRow.style.display = 'flex';
         } else {
-            item.qty = bottlesUsed;
+            shotsRow.style.display = 'none';
         }
-        item.sellingUnit = newUnit;
-    } else if (item.unitType === 'Pack') {
-        var newUnit = item.sellingUnit === 'Bottle/Can' ? 'Pack' : 'Bottle/Can';
-        var bottlesUsed = item.sellingUnit === 'Pack' ? item.qty * item.perPack : item.qty;
-        if (newUnit === 'Pack') {
-            var newQty = Math.floor(bottlesUsed / item.perPack);
-            if (newQty === 0) { alert('Not enough bottles/cans for 1 pack (' + item.perPack + ' needed)'); return; }
-            item.qty = newQty;
-        } else {
-            item.qty = bottlesUsed;
-        }
-        item.sellingUnit = newUnit;
-    } else if (item.unitType === 'Bottle' && item.shotsPerBottle > 1) {
-        var newUnit = item.sellingUnit === 'Shot' ? 'Bottle' : 'Shot';
-        var shotsUsed = item.sellingUnit === 'Bottle' ? item.qty * item.shotsPerBottle : item.qty;
-        if (newUnit === 'Bottle') {
-            var newQty = Math.floor(shotsUsed / item.shotsPerBottle);
-            if (newQty === 0) { alert('Not enough shots for 1 bottle (' + item.shotsPerBottle + ' needed)'); return; }
-            item.qty = newQty;
-        } else {
-            item.qty = shotsUsed;
-        }
-        item.sellingUnit = newUnit;
+
+        document.getElementById('remainingInput1').value = 0;
+        document.getElementById('remainingShots').value = 0;
+        document.getElementById('remainingInput1').classList.remove('error');
+        document.getElementById('remainingShots').classList.remove('error');
     }
-    renderCart();
+
+    document.getElementById('saveSaleBtn').disabled = true;
+
+    recalcModal();
+
+    document.getElementById('stockModal').classList.add('active');
+
+    setTimeout(function() {
+        var focusEl = isWine ? document.getElementById('wineRemainingGlasses') : document.getElementById('remainingInput1');
+        focusEl.focus();
+        focusEl.select();
+    }, 100);
 }
 
-function renderCart() {
-    var container = document.getElementById('cartItems');
-    var subtotal = 0;
-    var html = '';
-    cart.forEach(function(item) {
-        var effPrice = item.sellingUnit === 'Shot' ? (item.price / item.shotsPerBottle) : item.price;
-        var total = effPrice * item.qty;
-        subtotal += total;
-        var unitLabel = item.sellingUnit;
-    var perUnit = item.sellingUnit === 'Crate' ? item.perCrate : (item.sellingUnit === 'Pack' ? item.perPack : (item.sellingUnit === 'Bottle' && item.shotsPerBottle > 1 ? item.shotsPerBottle : 1));
-        var bottleQty = item.qty * perUnit;
-        var displayPrice = item.sellingUnit === 'Shot' ? (item.price / item.shotsPerBottle) : item.price;
-        html += '<div class="cart-item">' +
-            '<div><strong>' + item.name + '</strong><br>MK ' + displayPrice.toFixed(2) + ' / ' + unitLabel;
-        if (item.unitType === 'Crate' && item.perCrate > 1) {
-            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' bottles</span>';
-            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Bottle' ? 'Crate' : 'Bottle') + '</button>';
+function closeModal() {
+    document.getElementById('stockModal').classList.remove('active');
+    currentProductId = null;
+}
+
+// ── Real-Time Calculation ───────────────────────────────────
+function recalcModal() {
+    var p = products[currentProductId];
+    if (!p) return;
+
+    var isWine = (p.unitType === 'wine_glass');
+
+    if (isWine) {
+        var totalGlasses = p.stock;
+        var remainingGlasses = parseInt(document.getElementById('wineRemainingGlasses').value) || 0;
+        var glassesPerLiter = p.glassesPerLiter || 28;
+        var valid = true;
+
+        document.getElementById('wineRemainingGlasses').classList.remove('error');
+
+        if (remainingGlasses < 0) {
+            valid = false;
         }
-        if (item.unitType === 'Pack' && item.perPack > 1) {
-            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' bottles/cans</span>';
-            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Bottle/Can' ? 'Pack' : 'Bottle/Can') + '</button>';
+        if (remainingGlasses > totalGlasses) {
+            valid = false;
+            document.getElementById('wineRemainingGlasses').classList.add('error');
         }
-        if (item.unitType === 'Bottle' && item.shotsPerBottle > 1) {
-            html += '<br><span style="font-size:0.75rem;color:var(--text-muted);">' + bottleQty + ' shots</span>';
-            html += '<br><button class="btn btn-sm btn-outline" onclick="toggleUnit(' + item.id + ')" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Switch to ' + (item.sellingUnit === 'Shot' ? 'Bottle' : 'Shot') + '</button>';
+
+        if (!valid) {
+            document.getElementById('calcSold').textContent = '—';
+            document.getElementById('calcAmount').textContent = 'MK 0';
+            document.getElementById('saveSaleBtn').disabled = true;
+            return;
         }
-        html += '</div>' +
-            '<div class="cart-item-qty">' +
-            '<button class="btn btn-sm btn-outline" onclick="updateQty(' + item.id + ',' + (item.qty - 1) + ')">-</button>' +
-            '<input type="number" value="' + item.qty + '" min="1" onchange="updateQty(' + item.id + ', this.value)">' +
-            '<button class="btn btn-sm btn-outline" onclick="updateQty(' + item.id + ',' + (item.qty + 1) + ')">+</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="removeFromCart(' + item.id + ')"><i class="fas fa-times"></i></button>' +
-            '</div>' +
-            '<div><strong>MK ' + total.toFixed(2) + '</strong></div>' +
-            '</div>';
-    });
-    if (cart.length === 0) {
-        html = '<p class="text-muted" style="text-align:center;">Cart is empty. Click products to add.</p>';
+
+        var soldGlasses = totalGlasses - remainingGlasses;
+        if (soldGlasses < 0) soldGlasses = 0;
+        var amount = soldGlasses * Number(p.price);
+
+        document.getElementById('calcSold').textContent = soldGlasses + ' Glasses';
+        document.getElementById('calcAmount').textContent = 'MK ' + Math.round(amount).toLocaleString('en-US');
+
+        document.getElementById('saveSaleBtn').disabled = (soldGlasses <= 0);
+        return;
     }
-    container.innerHTML = html;
 
-    document.getElementById('subtotal').textContent = 'MK ' + subtotal.toFixed(2);
-    document.getElementById('total').textContent = 'MK ' + subtotal.toFixed(2);
-    document.getElementById('checkoutBtn').disabled = cart.length === 0;
-    calcChange();
+    var packSize = p.packSize || 6;
+    var crateSize = p.crateSize || 20;
+    var shotsPerBottle = p.shotsPerBottle || 1;
+
+    var val1 = parseInt(document.getElementById('remainingInput1').value) || 0;
+    var valShots = parseInt(document.getElementById('remainingShots').value) || 0;
+    var totalBase = p.stock;
+    var remainingBase = val1;
+    var unitLabel = 'Bottles';
+    var valid = true;
+
+    if (shotsPerBottle > 1) {
+        remainingBase = val1 * shotsPerBottle + valShots;
+        unitLabel = 'Shots';
+    }
+
+    document.getElementById('remainingInput1').classList.remove('error');
+    document.getElementById('remainingShots').classList.remove('error');
+
+    if (val1 < 0 || valShots < 0) {
+        valid = false;
+    }
+
+    if (remainingBase > totalBase) {
+        valid = false;
+        document.getElementById('remainingInput1').classList.add('error');
+        if (shotsPerBottle > 1) document.getElementById('remainingShots').classList.add('error');
+    }
+
+    if (!valid) {
+        document.getElementById('calcSold').textContent = '—';
+        document.getElementById('calcAmount').textContent = 'MK 0';
+        document.getElementById('saveSaleBtn').disabled = true;
+        return;
+    }
+
+    var soldQty = totalBase - remainingBase;
+    if (soldQty < 0) soldQty = 0;
+    var amount = soldQty * Number(p.price);
+
+    document.getElementById('calcSold').textContent = soldQty + ' ' + unitLabel;
+    document.getElementById('calcAmount').textContent = 'MK ' + Math.round(amount).toLocaleString('en-US');
+
+    document.getElementById('saveSaleBtn').disabled = (soldQty <= 0);
 }
 
-function calcChange() {
-    var total = 0;
-    cart.forEach(function(item) { total += item.price * item.qty; });
-    var paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-    var change = Math.max(0, paid - total);
-    document.getElementById('changeDue').textContent = 'MK ' + change.toFixed(2);
-}
+document.getElementById('remainingInput1').addEventListener('input', recalcModal);
+document.getElementById('remainingShots').addEventListener('input', recalcModal);
+document.getElementById('wineRemainingGlasses').addEventListener('input', recalcModal);
 
-document.getElementById('amountPaid').addEventListener('input', calcChange);
+// ── Keyboard Support ────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('stockModal').classList.contains('active')) {
+        closeModal();
+    }
+    if (e.key === 'Enter' && document.getElementById('stockModal').classList.contains('active')) {
+        var btn = document.getElementById('saveSaleBtn');
+        if (!btn.disabled) btn.click();
+    }
+});
 
-document.getElementById('checkoutBtn').addEventListener('click', function() {
-    if (cart.length === 0) return;
-    var items = cart.map(function(item) {
-        return {
-            product_id: item.id,
-            quantity: item.qty,
-            selling_unit: item.sellingUnit
-        };
-    });
-    var paymentMethod = document.getElementById('paymentMethod').value;
-    var amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+// ── Save Sale ───────────────────────────────────────────────
+document.getElementById('saveSaleBtn').addEventListener('click', function() {
+    if (!currentProductId) return;
+    var p = products[currentProductId];
+
+    var isWine = (p.unitType === 'wine_glass');
+    var payload = { product_id: currentProductId };
+
+    if (isWine) {
+        var remainingGlasses = parseInt(document.getElementById('wineRemainingGlasses').value) || 0;
+        payload.remaining_glasses = remainingGlasses;
+    } else {
+        var val1 = parseInt(document.getElementById('remainingInput1').value) || 0;
+        var valShots = parseInt(document.getElementById('remainingShots').value) || 0;
+        var shotsPerBottle = p.shotsPerBottle || 1;
+        payload.remaining_bottles = val1;
+        if (shotsPerBottle > 1) {
+            payload.remaining_shots = valShots;
+        }
+    }
+
+    showToast('Saving...', 'success');
 
     fetch('{% url "sales:create_sale" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-        body: JSON.stringify({ items: items, payment_method: paymentMethod, amount_paid: amountPaid })
+        body: JSON.stringify(payload)
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            window.location.href = '{% url "sales:sale_receipt" 0 %}'.replace('0', data.sale_id);
+            if (isWine) {
+                var remainingGlasses = parseInt(document.getElementById('wineRemainingGlasses').value) || 0;
+                var soldGlasses = p.stock - remainingGlasses;
+                var amount = soldGlasses * Number(p.price);
+                addToSession(p, soldGlasses, amount, data.receipt_number);
+            } else {
+                var val1 = parseInt(document.getElementById('remainingInput1').value) || 0;
+                var valShots = parseInt(document.getElementById('remainingShots').value) || 0;
+                var shotsPerBottle = p.shotsPerBottle || 1;
+                var remainingBase = shotsPerBottle > 1 ? (val1 * shotsPerBottle + valShots) : val1;
+                var soldQty = p.stock - remainingBase;
+                var amount = shotsPerBottle > 1 ? (soldQty / shotsPerBottle) * Number(p.price) : soldQty * Number(p.price);
+                addToSession(p, soldQty, amount, data.receipt_number);
+            }
+            closeModal();
+            showToast('Sale saved! Receipt: ' + data.receipt_number, 'success');
         } else {
-            alert(data.error || 'Sale failed');
+            showToast(data.error || 'Sale failed', 'error');
         }
     })
-    .catch(function(err) { alert('Error: ' + err); });
+    .catch(function(err) {
+        showToast('Error: ' + err, 'error');
+    });
 });
 
+// ── Session Management ──────────────────────────────────────
+function addToSession(product, soldQty, amount, receipt) {
+    var existing = sessionItems.findIndex(function(item) { return item.id === product.id; });
+    if (existing >= 0) {
+        sessionItems[existing].qty += soldQty;
+        sessionItems[existing].amount += amount;
+    } else {
+        sessionItems.push({
+            id: product.id,
+            name: product.name,
+            qty: soldQty,
+            amount: amount,
+            receipt: receipt
+        });
+    }
+    renderSession();
+}
+
+function renderSession() {
+    var container = document.getElementById('sessionList');
+    var total = 0;
+    var html = '';
+
+    sessionItems.forEach(function(item) {
+        total += item.amount;
+        html += '<div class="sales-session-item">' +
+            '<div class="item-info">' +
+            '<div class="item-name">' + item.name + '</div>' +
+            '<div class="item-detail">Sold: ' + item.qty + ' &middot; ' + (item.receipt ? '#' + item.receipt : '') + '</div>' +
+            '</div>' +
+            '<div class="item-amount">MK ' + Math.round(item.amount).toLocaleString('en-US') + '</div>' +
+            '</div>';
+    });
+
+    if (sessionItems.length === 0) {
+        html = '<p class="text-muted" style="text-align:center;padding:2rem 1rem;font-size:0.85rem;">' +
+            '<i class="fas fa-box-open" style="font-size:1.2rem;display:block;margin-bottom:0.5rem;opacity:0.5;"></i>' +
+            'No sales yet. Select a product above.</p>';
+    }
+
+    container.innerHTML = html;
+    sessionTotal = total;
+    document.getElementById('sessionTotal').textContent = 'MK ' + Math.round(total).toLocaleString('en-US');
+}
+
+// ── Toast Notifications ─────────────────────────────────────
+function showToast(msg, type) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast ' + type;
+    toast.style.display = 'block';
+    setTimeout(function() {
+        toast.style.display = 'none';
+    }, 4000);
+}
+
+// ── Search & Filter ─────────────────────────────────────────
 document.getElementById('productSearch').addEventListener('input', function() {
     var q = this.value.toLowerCase();
     document.querySelectorAll('.pos-product').forEach(function(el) {

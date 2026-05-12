@@ -2,41 +2,44 @@
 {% block title %}Settings - {{ block.super }}{% endblock %}
 {% block page_title %}System Settings{% endblock %}
 {% block content %}
-<div class="grid-2">
-    <div class="card">
-        <div class="card-header"><i class="fas fa-cog"></i> General Settings</div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
-                    {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                </div>
-                {% endfor %}
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
-                </div>
-            </form>
-        </div>
+<div class="settings-layout">
+    <div class="settings-sidebar">
+        <a href="{% url 'settings_app:general' %}" class="settings-tab {% if settings_tab == 'general' %}active{% endif %}">
+            <i class="fas fa-cog"></i> General
+        </a>
+        <a href="{% url 'settings_app:users' %}" class="settings-tab {% if settings_tab == 'users' or settings_tab == 'user_form' or settings_tab == 'user_delete' or settings_tab == 'user_change_role' %}active{% endif %}">
+            <i class="fas fa-users"></i> Users
+        </a>
+        <a href="{% url 'settings_app:activity_logs' %}" class="settings-tab {% if settings_tab == 'activity_logs' %}active{% endif %}">
+            <i class="fas fa-history"></i> Activity Logs
+        </a>
+        <a href="{% url 'settings_app:backup' %}" class="settings-tab {% if settings_tab == 'backup' %}active{% endif %}">
+            <i class="fas fa-database"></i> Backup
+        </a>
+        <a href="{% url 'settings_app:theme' %}" class="settings-tab {% if settings_tab == 'theme' %}active{% endif %}">
+            <i class="fas fa-palette"></i> Themes
+        </a>
     </div>
-    <div>
-        <div class="card">
-            <div class="card-header"><i class="fas fa-database"></i> Database</div>
-            <div class="card-body">
-                <p>Create a backup of your database.</p>
-                <a href="{% url 'settings_app:backup' %}" class="btn btn-warning"><i class="fas fa-download"></i> Backup Database</a>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><i class="fas fa-history"></i> Activity Logs</div>
-            <div class="card-body">
-                <p>View system activity and user actions.</p>
-                <a href="{% url 'settings_app:activity_logs' %}" class="btn btn-info"><i class="fas fa-list"></i> View Logs</a>
-            </div>
-        </div>
+    <div class="settings-content">
+        {% if settings_tab == 'general' %}
+            {% include 'settings_app/settings_general.html' %}
+        {% elif settings_tab == 'users' %}
+            {% include 'accounts/user_list.html' %}
+        {% elif settings_tab == 'user_form' %}
+            {% include 'accounts/user_form.html' %}
+        {% elif settings_tab == 'user_delete' %}
+            {% include 'accounts/user_confirm_delete.html' %}
+        {% elif settings_tab == 'user_change_role' %}
+            {% include 'accounts/user_change_role.html' %}
+        {% elif settings_tab == 'activity_logs' %}
+            {% include 'settings_app/activity_logs_content.html' %}
+        {% elif settings_tab == 'backup' %}
+            {% include 'settings_app/backup.html' %}
+        {% elif settings_tab == 'theme' %}
+            {% include 'settings_app/theme_settings.html' %}
+        {% else %}
+            {% include 'settings_app/settings_general.html' %}
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -3,30 +3,142 @@
         <i class="fas fa-store"></i>
         <span>{% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}</span>
     </div>
+
+    {% if all_branches|length > 0 and user.profile.role != 'cashier' %}
+    <div class="sidebar-section sidebar-branches">
+        <div class="sidebar-section-title">
+            <i class="fas fa-code-branch"></i> <span>Quick Switch</span>
+        </div>
+        <div class="sidebar-branch-list">
+            {% if user.profile.role == 'super_admin' %}
+            <form method="post" action="{% url 'branches:switch_branch' %}">
+                {% csrf_token %}
+                <button type="submit" name="branch_id" value="" class="sidebar-branch-item {% if not current_branch %}active{% endif %}">
+                    <i class="fas fa-globe"></i>
+                    <span>All Branches</span>
+                </button>
+            </form>
+            {% endif %}
+            {% for b in all_branches %}
+            <form method="post" action="{% url 'branches:switch_branch' %}">
+                {% csrf_token %}
+                <button type="submit" name="branch_id" value="{{ b.id }}" class="sidebar-branch-item {% if current_branch and current_branch.id == b.id %}active{% endif %}">
+                    <i class="fas fa-{% if b.branch_type == 'Warehouse' %}warehouse{% elif b.branch_type == 'Club' %}music{% elif b.branch_type == 'Bar' %}glass-cheers{% elif b.branch_type == 'Bottle Store' %}wine-bottle{% elif b.branch_type == 'Restaurant' %}utensils{% else %}store{% endif %}"></i>
+                    <span>{{ b.branch_name }}</span>
+                    <span class="sidebar-branch-code">{{ b.branch_code }}</span>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="sidebar-menu">
+        <div class="menu-label">Navigation</div>
+        <a href="{% url 'dashboard:welcome' %}"><i class="fas fa-home"></i> Welcome</a>
+        {% if user.profile.role == 'cashier' %}
+        <div class="menu-label">Sales</div>
+        <a href="{% url 'sales:pos' %}"><i class="fas fa-shopping-cart"></i> Point of Sale</a>
+        <a href="{% url 'inventory:sales_sheet' %}"><i class="fas fa-cash-register"></i> Sales Sheet</a>
+        <div class="menu-label">Account</div>
+        <a href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> My Profile</a>
+        <a href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        {% else %}
         <div class="menu-label">Main Menu</div>
         <a href="{% url 'dashboard:index' %}"><i class="fas fa-th-large"></i> Dashboard</a>
         <a href="{% url 'sales:pos' %}"><i class="fas fa-shopping-cart"></i> Point of Sale</a>
         <a href="{% url 'sales:sale_history' %}"><i class="fas fa-receipt"></i> Sale History</a>
 
         <div class="menu-label">Management</div>
-        <a href="{% url 'inventory:product_list' %}"><i class="fas fa-box"></i> Products</a>
+        {% if current_branch and current_branch.branch_type == 'Warehouse' %}
+        <a href="{% url 'inventory:stock_sheet' %}"><i class="fas fa-table"></i> Warehouse Stock Sheet</a>
+        {% endif %}
+        <a href="{% url 'inventory:sales_sheet' %}"><i class="fas fa-cash-register"></i> Sales Sheet</a>
+        {% if user.profile.role == 'super_admin' %}
+        <a href="{% url 'branches:branch_list' %}"><i class="fas fa-code-branch"></i> Branches</a>
+        {% endif %}
+        <a href="{% url 'branches:transfer_list' %}"><i class="fas fa-exchange-alt"></i> Branch Transfers</a>
         <a href="{% url 'inventory:category_list' %}"><i class="fas fa-tags"></i> Categories</a>
         <a href="{% url 'suppliers:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
         <a href="{% url 'suppliers:purchase_list' %}"><i class="fas fa-clipboard-list"></i> Purchases</a>
         <a href="{% url 'expenses:expense_list' %}"><i class="fas fa-money-bill-wave"></i> Expenses</a>
-        <a href="{% url 'inventory:stock_sheet' %}"><i class="fas fa-table"></i> Stock Sheet</a>
 
         <div class="menu-label">Reports</div>
         <a href="{% url 'reports:reports_index' %}"><i class="fas fa-chart-bar"></i> Reports</a>
 
+        {% if user.profile.role == 'super_admin' %}
         <div class="menu-label">System</div>
         <a href="{% url 'settings_app:settings' %}"><i class="fas fa-cog"></i> Settings</a>
+        <a href="{% url 'settings_app:users' %}"><i class="fas fa-users"></i> User Management</a>
         <a href="{% url 'settings_app:activity_logs' %}"><i class="fas fa-history"></i> Activity Logs</a>
-        {% if user.profile.role == 'super_admin' %}
-        <a href="{% url 'accounts:register' %}"><i class="fas fa-user-plus"></i> Register User</a>
+        <a href="{% url 'settings_app:backup' %}"><i class="fas fa-database"></i> Backup</a>
         {% endif %}
         <a href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> My Profile</a>
         <a href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        {% endif %}
     </div>
 </div>
+
+<style>
+.sidebar-section {
+    padding: 0 10px;
+    margin-bottom: 8px;
+}
+.sidebar-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+.sidebar-branch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.sidebar-branch-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: left;
+    transition: all 0.15s;
+}
+.sidebar-branch-item:hover { background: rgba(255,255,255,0.05); }
+.sidebar-branch-item.active {
+    background: rgba(37, 99, 235, 0.15);
+    color: var(--primary);
+    font-weight: 600;
+}
+.sidebar-branch-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.sidebar-branch-item.active i { color: var(--primary); }
+.sidebar-branch-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-branch-code {
+    font-size: 9px;
+    font-family: monospace;
+    color: var(--text-muted);
+    padding: 1px 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    flex: 0 !important;
+}
+</style>

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Stock Transfers{% endblock %}
+{% block page_title %}Stock Transfers{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="content-header-buttons">
+        <a href="{% url 'branches:transfer_add' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Transfer</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="filter-bar" style="margin-bottom: 16px;">
+            <form method="get" class="filter-form">
+                <select name="status" class="form-input" style="width: auto; display: inline-block;" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+                <a href="{% url 'branches:transfer_list' %}" class="btn btn-sm btn-outline">Clear</a>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Requested By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transfers %}
+                    <tr>
+                        <td>{{ t.created_at|date:"Y-m-d H:i" }}</td>
+                        <td><span class="badge badge-secondary">{{ t.from_branch.branch_code }}</span> {{ t.from_branch.branch_name }}</td>
+                        <td><span class="badge badge-info">{{ t.to_branch.branch_code }}</span> {{ t.to_branch.branch_name }}</td>
+                        <td>{{ t.product.name }}</td>
+                        <td>{{ t.quantity }}</td>
+                        <td>
+                            {% if t.status == 'pending' %}<span class="badge badge-warning">Pending{% elif t.status == 'approved' %}<span class="badge badge-info">Approved{% elif t.status == 'rejected' %}<span class="badge badge-danger">Rejected{% elif t.status == 'completed' %}<span class="badge badge-success">Completed{% endif %}</span>
+                        </td>
+                        <td>{{ t.requested_by.get_full_name|default:t.requested_by.username }}</td>
+                        <td>
+                            <div class="btn-group" style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                {% if t.status == 'pending' %}
+                                <form method="post" action="{% url 'branches:transfer_approve' t.id %}" style="display:inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" title="Approve"><i class="fas fa-check"></i></button>
+                                </form>
+                                <form method="post" action="{% url 'branches:transfer_reject' t.id %}" style="display:inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Reject"><i class="fas fa-times"></i></button>
+                                </form>
+                                {% elif t.status == 'approved' %}
+                                <form method="post" action="{% url 'branches:transfer_complete' t.id %}" style="display:inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Complete Transfer"><i class="fas fa-check-double"></i></button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No transfers found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.filter-bar .filter-form { display: flex; gap: 8px; align-items: center; }
+.btn-group .btn { padding: 4px 8px; font-size: 12px; }
+</style>
+{% endblock %}

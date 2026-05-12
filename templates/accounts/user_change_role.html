@@ -1,0 +1,21 @@
+<div class="card">
+    <div class="card-header"><i class="fas fa-user-tag"></i> Change Role</div>
+    <div class="card-body">
+        <p>Change role for user <strong>{{ role_user.username }}</strong> (current: {{ role_user.profile.get_role_display }})</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="role">New Role:</label>
+                <select name="role" id="role" class="form-input">
+                    {% for code, label in role_choices %}
+                    <option value="{{ code }}" {% if role_user.profile.role == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Change Role</button>
+                <a href="{% url 'settings_app:users' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

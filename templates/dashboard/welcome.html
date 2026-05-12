@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome - {{ site_settings.business_name|default:'Azibambo Stop Over' }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/welcome.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="welcome-page">
+  <div class="welcome-hero">
+    <div class="welcome-hero-bg"></div>
+    <div class="welcome-hero-content">
+      <div class="welcome-greeting">
+        <div class="welcome-avatar">
+          {% if user.profile.avatar %}
+          <img src="{{ user.profile.avatar.url }}" alt="{{ user.first_name }}">
+          {% else %}
+          <span>{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="welcome-text">
+          <h1>Welcome back, {{ user.first_name|default:user.username }} <span class="welcome-wave">👋</span></h1>
+          <p class="welcome-branch">
+            <i class="fas fa-store-alt"></i>
+            You are logged into <strong>{{ current_branch.branch_name|default:'All Branches' }}</strong>
+          </p>
+        </div>
+      </div>
+      <div class="welcome-meta">
+        <div class="welcome-date">
+          <i class="far fa-calendar-alt"></i>
+          <span id="current-date">{{ now|date:'l, F j, Y' }}</span>
+        </div>
+        <div class="welcome-time">
+          <i class="far fa-clock"></i>
+          <span id="current-time">{{ now|date:'H:i' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-role-badge-bar">
+    <div class="role-badge role-{{ profile.role }}">
+      <i class="fas fa-{% if profile.role == 'super_admin' %}crown{% elif profile.role == 'manager' %}user-tie{% elif profile.role == 'cashier' %}cash-register{% else %}user{% endif %}"></i>
+      <span>{{ profile.get_role_display }}</span>
+    </div>
+    {% if current_branch %}
+    <div class="branch-badge">
+      <i class="fas fa-store-alt"></i>
+      <span>{{ current_branch.branch_name }}</span>
+      <span class="branch-code">{{ current_branch.branch_code }}</span>
+    </div>
+    {% endif %}
+    <div class="daily-sales-badge">
+      <i class="fas fa-chart-line"></i>
+      <span>Today: {{ site_settings.currency_symbol|default:'MK' }}{{ daily_sales|floatformat:0 }}</span>
+    </div>
+  </div>
+
+  {% if profile.role == 'cashier' and profile.allowed_categories.exists %}
+  <div class="welcome-section">
+    <div class="assigned-categories-bar">
+      <i class="fas fa-tag"></i>
+      <span>Assigned Categories:</span>
+      {% for cat in profile.allowed_categories.all %}
+      <span class="category-pill">{{ cat.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="welcome-section">
+    <h2 class="section-title">Choose Your Module</h2>
+    <p class="section-subtitle">Select your workspace based on your role</p>
+
+    <div class="role-cards-grid">
+      <div class="role-card {% if profile.role == 'super_admin' %}role-card-active{% else %}role-card-dimmed{% endif %}" data-role="super_admin">
+        <div class="role-card-glow"></div>
+        <div class="role-card-header">
+          <div class="role-icon">
+            <i class="fas fa-crown"></i>
+          </div>
+          <h3>Admin</h3>
+          <div class="role-badge-tag">Full Access</div>
+        </div>
+        <div class="role-card-body">
+          <ul class="role-features">
+            <li><i class="fas fa-check-circle"></i> Full system access</li>
+            <li><i class="fas fa-check-circle"></i> Branch management</li>
+            <li><i class="fas fa-check-circle"></i> Warehouse &amp; Reports</li>
+            <li><i class="fas fa-check-circle"></i> User management</li>
+            <li><i class="fas fa-check-circle"></i> Admin settings</li>
+            <li><i class="fas fa-check-circle"></i> Permissions management</li>
+          </ul>
+        </div>
+        {% if profile.role == 'super_admin' %}
+        <div class="role-card-footer">
+          <span class="active-role-pulse"><i class="fas fa-circle"></i> Your Active Role</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="role-card {% if profile.role == 'manager' %}role-card-active{% else %}role-card-dimmed{% endif %}" data-role="manager">
+        <div class="role-card-glow"></div>
+        <div class="role-card-header">
+          <div class="role-icon">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <h3>Manager</h3>
+          <div class="role-badge-tag">Operations</div>
+        </div>
+        <div class="role-card-body">
+          <ul class="role-features">
+            <li><i class="fas fa-check-circle"></i> Inventory management</li>
+            <li><i class="fas fa-check-circle"></i> Sales sheets</li>
+            <li><i class="fas fa-check-circle"></i> Stock transfers</li>
+            <li><i class="fas fa-check-circle"></i> Reports &amp; analytics</li>
+            <li><i class="fas fa-times-circle restricted"></i> User management</li>
+            <li><i class="fas fa-times-circle restricted"></i> Admin settings</li>
+          </ul>
+        </div>
+        {% if profile.role == 'manager' %}
+        <div class="role-card-footer">
+          <span class="active-role-pulse"><i class="fas fa-circle"></i> Your Active Role</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="role-card {% if profile.role == 'cashier' %}role-card-active{% else %}role-card-dimmed{% endif %}" data-role="cashier">
+        <div class="role-card-glow"></div>
+        <div class="role-card-header">
+          <div class="role-icon">
+            <i class="fas fa-cash-register"></i>
+          </div>
+          <h3>Cashier</h3>
+          <div class="role-badge-tag">Sales Floor</div>
+        </div>
+        <div class="role-card-body">
+          <ul class="role-features">
+            <li><i class="fas fa-check-circle"></i> Point of Sale (POS)</li>
+            <li><i class="fas fa-check-circle"></i> Sales sheet</li>
+            <li><i class="fas fa-times-circle restricted"></i> Reports</li>
+            <li><i class="fas fa-times-circle restricted"></i> Warehouse access</li>
+            <li><i class="fas fa-times-circle restricted"></i> User management</li>
+            <li><i class="fas fa-times-circle restricted"></i> Admin settings</li>
+          </ul>
+        </div>
+        {% if profile.role == 'cashier' %}
+        <div class="role-card-footer">
+          <span class="active-role-pulse"><i class="fas fa-circle"></i> Your Active Role</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-section">
+    <h2 class="section-title">Quick Access</h2>
+    <p class="section-subtitle">Frequently used modules</p>
+
+    <div class="quick-access-grid">
+      {% if profile.role == 'super_admin' %}
+      <a href="{% url 'inventory:stock_sheet' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-warehouse"></i></div>
+        <span>Warehouse</span>
+      </a>
+      <a href="{% url 'reports:reports_index' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-chart-bar"></i></div>
+        <span>Reports</span>
+      </a>
+      <a href="{% url 'branches:branch_list' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-code-branch"></i></div>
+        <span>Branches</span>
+      </a>
+      <a href="{% url 'settings_app:users' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-users"></i></div>
+        <span>Users</span>
+      </a>
+      <a href="{% url 'settings_app:settings' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-cog"></i></div>
+        <span>Admin Settings</span>
+      </a>
+      <a href="{% url 'settings_app:activity_logs' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-shield-alt"></i></div>
+        <span>Permissions</span>
+      </a>
+      {% elif profile.role == 'manager' %}
+      <a href="{% url 'inventory:product_list' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-boxes"></i></div>
+        <span>Inventory</span>
+      </a>
+      <a href="{% url 'inventory:sales_sheet' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-cash-register"></i></div>
+        <span>Sales Sheet</span>
+      </a>
+      <a href="{% url 'branches:transfer_list' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-exchange-alt"></i></div>
+        <span>Transfers</span>
+      </a>
+      <a href="{% url 'reports:reports_index' %}" class="quick-card">
+        <div class="quick-card-icon"><i class="fas fa-chart-bar"></i></div>
+        <span>Reports</span>
+      </a>
+      {% elif profile.role == 'cashier' %}
+      <a href="{% url 'sales:pos' %}" class="quick-card quick-card-primary">
+        <div class="quick-card-icon"><i class="fas fa-shopping-cart"></i></div>
+        <span>Open POS</span>
+      </a>
+      <a href="{% url 'inventory:sales_sheet' %}" class="quick-card quick-card-primary">
+        <div class="quick-card-icon"><i class="fas fa-cash-register"></i></div>
+        <span>Sales Sheet</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if profile.role == 'super_admin' or profile.role == 'manager' %}
+  <div class="welcome-section">
+    <h2 class="section-title">
+      <i class="fas fa-users"></i>
+      Cashiers Online
+    </h2>
+    <p class="section-subtitle">Active cashiers across branches</p>
+
+    <div class="cashiers-grid">
+      {% for c in cashiers %}
+      <div class="cashier-card {% if c.is_online %}online{% endif %}">
+        <div class="cashier-status-dot {% if c.is_online %}online{% else %}offline{% endif %}"></div>
+        <div class="cashier-avatar">
+          {% if c.user.profile.avatar %}
+          <img src="{{ c.user.profile.avatar.url }}" alt="{{ c.user.first_name }}">
+          {% else %}
+          <span>{{ c.user.first_name|first|upper }}{{ c.user.last_name|first|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="cashier-info">
+          <div class="cashier-name">{{ c.user.get_full_name|default:c.user.username }}</div>
+          <div class="cashier-branch">
+            <i class="fas fa-store-alt"></i> {{ c.branch_name }}
+          </div>
+        </div>
+        <div class="cashier-status">
+          {% if c.is_online %}
+          <span class="status-online">Online</span>
+          {% else %}
+          <span class="status-offline">Offline</span>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="fas fa-users-slash"></i>
+        <p>No cashiers found</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateClock() {
+  var now = new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  var el = document.getElementById('current-time');
+  if (el) el.textContent = timeStr;
+}
+setInterval(updateClock, 30000);
+</script>
+{% endblock %}

@@ -7,6 +7,23 @@
     <title>{% block title %}{% if site_settings %}{{ site_settings.business_name }}{% else %}Azibambo Stop_Over{% endif %}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        :root {
+            --branch-primary: {{ branch_theme.primary }};
+            --branch-secondary: {{ branch_theme.secondary }};
+            --branch-logo-bg: {{ branch_theme.logo_bg }};
+            --branch-mode: {{ branch_theme.mode }};
+            --sidebar-bg: {{ branch_theme.sidebar_bg }};
+            --sidebar-text: {{ branch_theme.sidebar_text }};
+            --header-bg: {{ branch_theme.header_bg }};
+            --header-text: {{ branch_theme.header_text }};
+            --selection-bg: {{ branch_theme.selection_bg }};
+            --selection-text: {{ branch_theme.selection_text }};
+            --button-primary-bg: {{ branch_theme.button_color }};
+            --card-accent: {{ branch_theme.card_accent }};
+            --widget-bg: {{ branch_theme.widget_bg }};
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>

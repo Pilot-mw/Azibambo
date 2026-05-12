@@ -16,21 +16,77 @@ class Profile(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='profiles')
+    allowed_categories = models.ManyToManyField('inventory.Category', blank=True, related_name='allowed_profiles')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
 
+    @property
+    def role_display(self):
+        return dict(self.ROLE_CHOICES).get(self.role, self.role)
+
+    @property
+    def is_admin(self):
+        return self.role == 'super_admin'
+
+    @property
+    def is_manager(self):
+        return self.role == 'manager'
+
+    @property
+    def is_cashier(self):
+        return self.role == 'cashier'
+
+    @property
+    def is_store_keeper(self):
+        return self.role == 'store_keeper'
+
+    def get_allowed_category_ids(self):
+        if self.role in ('super_admin', 'manager', 'store_keeper'):
+            return None
+        return list(self.allowed_categories.values_list('id', flat=True))
+
+    def get_allowed_categories(self):
+        from inventory.models import Category
+        if self.role in ('super_admin', 'manager', 'store_keeper'):
+            return Category.objects.filter(name__in=['Beers & Softs', 'Ciders & Wines', 'Spirits & Others'])
+        return self.allowed_categories.all()
+
+    def filter_products(self, qs):
+        cat_ids = self.get_allowed_category_ids()
+        if cat_ids is not None:
+            return qs.filter(category_id__in=cat_ids)
+        return qs
+
+    def filter_categories(self, qs):
+        cat_ids = self.get_allowed_category_ids()
+        if cat_ids is not None:
+            return qs.filter(id__in=cat_ids)
+        return qs
+
+    PERMISSIONS_MATRIX = {
+        'super_admin': ['*'],
+        'manager': [
+            'product_manage', 'reports_access', 'stock_sheet_manage',
+            'expense_manage', 'supplier_manage', 'purchase_manage',
+            'sales_access', 'dashboard_access',
+        ],
+        'cashier': [
+            'sales_access', 'dashboard_access',
+        ],
+        'store_keeper': [
+            'product_manage', 'stock_sheet_manage', 'supplier_manage',
+            'purchase_manage', 'dashboard_access',
+        ],
+    }
+
     def has_permission(self, perm):
         if self.role == 'super_admin':
             return True
-        permissions = {
-            'manager': ['product_manage', 'sales_access', 'reports_access', 'expense_manage'],
-            'cashier': ['sales_access'],
-            'store_keeper': ['product_manage', 'reports_access'],
-        }
-        return perm in permissions.get(self.role, [])
+        return perm in self.PERMISSIONS_MATRIX.get(self.role, [])
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -49,6 +105,7 @@ class ActivityLog(models.Model):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     details = models.TextField(blank=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
+    branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

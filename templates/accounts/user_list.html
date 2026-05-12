@@ -1,0 +1,59 @@
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-users"></i> User Management
+        <a href="{% url 'settings_app:user_create' %}" class="btn btn-sm btn-primary float-right"><i class="fas fa-plus"></i> Add User</a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="search-bar">
+            <input type="text" name="q" placeholder="Search users..." value="{{ query }}" class="form-input">
+            <select name="role" class="form-input">
+                <option value="">All Roles</option>
+                {% for code, label in role_choices %}
+                <option value="{{ code }}" {% if role_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="form-input">
+                <option value="">All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+        </form>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td><span class="badge badge-{{ user.profile.role }}">{{ user.profile.get_role_display }}</span></td>
+                        <td>{% if user.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
+                        <td class="actions">
+                            <a href="{% url 'settings_app:user_edit' user.pk %}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'settings_app:user_toggle_active' user.pk %}" class="btn btn-sm btn-warning" title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                <i class="fas {% if user.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                            </a>
+                            <a href="{% url 'settings_app:user_reset_password' user.pk %}" class="btn btn-sm btn-secondary" title="Reset Password"><i class="fas fa-key"></i></a>
+                            <a href="{% url 'settings_app:user_change_role' user.pk %}" class="btn btn-sm btn-primary" title="Change Role"><i class="fas fa-user-tag"></i></a>
+                            <a href="{% url 'settings_app:user_delete' user.pk %}" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align:center;">No users found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

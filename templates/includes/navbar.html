@@ -4,22 +4,298 @@
         <span class="page-title">{% block page_title %}{% endblock %}</span>
     </div>
     <div class="navbar-right">
+        {% if all_branches|length > 0 and user.profile.role != 'cashier' %}
+        <div class="branch-selector">
+            <form method="post" action="{% url 'branches:switch_branch' %}" class="branch-switch-form" id="branch-switch-form">
+                {% csrf_token %}
+                <div class="branch-dropdown">
+                    <button type="button" class="branch-dropdown-toggle" onclick="toggleBranchDropdown()">
+                        <i class="fas fa-store-alt"></i>
+                        <span class="branch-label">{% if current_branch %}{{ current_branch.branch_name }}{% else %}All Branches{% endif %}</span>
+                        <span class="branch-code-badge">{{ current_branch.branch_code|default:"" }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="branch-dropdown-menu" id="branch-dropdown-menu">
+                        {% if user.profile.role == 'super_admin' %}
+                        <button type="submit" name="branch_id" value="" class="branch-option {% if not current_branch %}active{% endif %}">
+                            <i class="fas fa-globe"></i>
+                            <span>All Branches</span>
+                            <span class="branch-option-tag">Global View</span>
+                        </button>
+                        <div class="branch-divider"></div>
+                        {% endif %}
+                        {% for b in all_branches %}
+                        <button type="submit" name="branch_id" value="{{ b.id }}" class="branch-option {% if current_branch and current_branch.id == b.id %}active{% endif %}">
+                            <i class="fas fa-{% if b.branch_type == 'Warehouse' %}warehouse{% elif b.branch_type == 'Club' %}music{% elif b.branch_type == 'Bar' %}glass-cheers{% elif b.branch_type == 'Bottle Store' %}wine-bottle{% elif b.branch_type == 'Restaurant' %}utensils{% else %}store{% endif %}"></i>
+                            <div class="branch-option-info">
+                                <span class="branch-option-name">{{ b.branch_name }}</span>
+                                <span class="branch-option-type">{{ b.get_branch_type_display }}</span>
+                            </div>
+                            <span class="branch-option-code">{{ b.branch_code }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
         {% if low_stock_count > 0 %}
         <a href="{% url 'reports:low_stock_report' %}" class="btn btn-outline btn-sm" title="Low Stock Alerts">
             <i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>
             <span class="badge badge-danger">{{ low_stock_count }}</span>
         </a>
         {% endif %}
-        <div class="navbar-user">
+        <div class="navbar-user dropdown">
             {% if user.profile.avatar %}
             <img src="{{ user.profile.avatar.url }}" class="avatar" alt="{{ user.username }}">
             {% else %}
-            <div class="avatar">{{ user.username|first|upper }}</div>
+            <div class="avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
             {% endif %}
             <div class="user-info">
                 <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                <div class="user-role">{{ user.profile.get_role_display }}</div>
+                <div class="user-role">
+                    <span class="role-indicator role-{{ user.profile.role }}">{{ user.profile.get_role_display }}</span>
+                </div>
+            </div>
+            <button class="user-dropdown-toggle" onclick="toggleUserDropdown()">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <div class="user-dropdown-header">
+                    <div class="user-dropdown-avatar">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.first_name }}">
+                        {% else %}
+                        <span>{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="user-dropdown-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="user-dropdown-role">{{ user.profile.get_role_display }}</div>
+                    </div>
+                </div>
+                <div class="user-dropdown-divider"></div>
+                <a href="{% url 'accounts:profile' %}" class="user-dropdown-item">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+                <a href="{% url 'accounts:change_password' %}" class="user-dropdown-item">
+                    <i class="fas fa-key"></i> Change Password
+                </a>
+                {% if user.profile.role != 'cashier' %}
+                <a href="{% url 'dashboard:index' %}" class="user-dropdown-item">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                {% endif %}
+                <div class="user-dropdown-divider"></div>
+                <a href="{% url 'accounts:logout' %}" class="user-dropdown-item user-dropdown-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
         </div>
     </div>
 </nav>
+
+<style>
+.role-indicator {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.role-indicator.role-super_admin { background: rgba(124,58,237,0.15); color: #7c3aed; }
+.role-indicator.role-manager { background: rgba(37,99,235,0.15); color: #2563eb; }
+.role-indicator.role-cashier { background: rgba(5,150,105,0.15); color: #059669; }
+.role-indicator.role-store_keeper { background: rgba(217,119,6,0.15); color: #d97706; }
+
+.navbar-user.dropdown { position: relative; cursor: pointer; }
+
+.user-dropdown-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 10px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.user-dropdown-toggle:hover { opacity: 1; }
+
+.user-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 240px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 1000;
+    overflow: hidden;
+}
+.user-dropdown-menu.show { display: block; }
+
+.user-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px 12px;
+}
+.user-dropdown-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--branch-primary, #2563eb), var(--branch-secondary, #1d4ed8));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.user-dropdown-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-dropdown-name { font-weight: 600; font-size: 14px; color: var(--dark); }
+.user-dropdown-role { font-size: 12px; color: var(--text-muted); }
+
+.user-dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.15s;
+}
+.user-dropdown-item:hover { background: var(--light, #f8fafc); }
+.user-dropdown-item i { width: 18px; text-align: center; color: var(--text-muted); }
+.user-dropdown-logout { color: var(--danger, #dc2626); }
+.user-dropdown-logout i { color: var(--danger, #dc2626); }
+
+.branch-selector { margin-right: 12px; position: relative; }
+.branch-dropdown { position: relative; }
+.branch-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark, #1a4a8a));
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+.branch-dropdown-toggle:hover {
+    background: linear-gradient(135deg, var(--primary-dark, #1a4a8a), #0d2f6e);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+.branch-dropdown-toggle i:first-child { font-size: 14px; }
+.branch-dropdown-toggle .branch-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.branch-dropdown-toggle .branch-code-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: monospace;
+}
+.branch-dropdown-toggle .fa-chevron-down { font-size: 10px; margin-left: 4px; }
+
+.branch-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 280px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    z-index: 1000;
+    overflow: hidden;
+    padding: 6px;
+}
+.branch-dropdown-menu.show { display: block; }
+
+.branch-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: left;
+    transition: background 0.15s;
+}
+.branch-option:hover { background: var(--bg); }
+.branch-option.active {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+    font-weight: 600;
+}
+.branch-option i:first-child {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.branch-option.active i:first-child { background: var(--primary); color: #fff; }
+.branch-option-info { flex: 1; line-height: 1.3; }
+.branch-option-name { display: block; }
+.branch-option-type { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.branch-option-code { font-size: 10px; font-family: monospace; color: var(--text-muted); padding: 2px 6px; background: var(--bg); border-radius: 4px; }
+.branch-option-tag { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+.branch-divider { height: 1px; background: var(--border); margin: 4px 8px; }
+
+@media (max-width: 768px) {
+    .branch-dropdown-menu { right: auto; left: 0; min-width: 260px; }
+    .branch-dropdown-toggle .branch-label { max-width: 120px; }
+}
+</style>
+
+<script>
+function toggleUserDropdown() {
+    var menu = document.getElementById('user-dropdown-menu');
+    menu.classList.toggle('show');
+}
+
+function toggleBranchDropdown() {
+    var menu = document.getElementById('branch-dropdown-menu');
+    menu.classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('branch-dropdown-menu');
+    var toggle = document.querySelector('.branch-dropdown-toggle');
+    if (menu && toggle && !toggle.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.remove('show');
+    }
+    var userMenu = document.getElementById('user-dropdown-menu');
+    var userToggle = document.querySelector('.user-dropdown-toggle');
+    var userArea = document.querySelector('.navbar-user.dropdown');
+    if (userMenu && userArea && !userArea.contains(e.target)) {
+        userMenu.classList.remove('show');
+    }
+});
+</script>

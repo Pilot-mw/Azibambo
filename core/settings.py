@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'reports',
     'suppliers',
     'settings_app',
+    'branches',
     'api',
 ]
 
@@ -39,6 +40,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'branches.middleware.BranchMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -55,6 +57,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'settings_app.context_processors.site_settings',
                 'accounts.context_processors.notification_count',
+                'branches.context_processors.branch_context',
             ],
         },
     },
@@ -102,7 +105,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = 'dashboard:index'
+LOGIN_REDIRECT_URL = 'dashboard:welcome'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

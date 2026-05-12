@@ -2,6 +2,44 @@
 {% block title %}Reports - {{ block.super }}{% endblock %}
 {% block page_title %}Reports{% endblock %}
 {% block content %}
+{% if not current_branch and branch_reports %}
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+        <span><i class="fas fa-store"></i> Today's Branch Performance</span>
+    </div>
+    <div class="card-body">
+        <div class="branch-comparison-table">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Sales</th>
+                        <th>Transactions</th>
+                        <th>Expenses</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for br in branch_reports %}
+                    <tr>
+                        <td><strong>{{ br.branch.branch_name }}</strong></td>
+                        <td>{{ site_settings.currency }} {{ br.sales|floatformat:0 }}</td>
+                        <td>{{ br.count }}</td>
+                        <td>{{ site_settings.currency }} {{ br.expenses|floatformat:0 }}</td>
+                        <td class="{% if br.sales >= br.expenses %}text-success{% else %}text-danger{% endif %}">
+                            {{ site_settings.currency }} {% widthratio br.sales|add:"0"|add:br.expenses|stringformat:"d" 1 0 %}...
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-muted text-center">No data</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>

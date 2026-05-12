@@ -19,6 +19,7 @@ class Sale(models.Model):
 
     receipt_number = models.CharField(max_length=50, unique=True, editable=False)
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sales')
+    branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='cash')
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)

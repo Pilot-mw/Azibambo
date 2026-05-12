@@ -2,10 +2,29 @@
 {% block title %}{{ title }} - {{ block.super }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 {% block content %}
-<div class="card" style="max-width:600px;">
+<style>
+.preview-box {
+    background: var(--card-bg, #1e293b);
+    border: 1px solid var(--border-color, #2d3a4a);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+    display: none;
+}
+.preview-box.active { display: block; }
+.preview-row {
+    display: flex; justify-content: space-between;
+    padding: 0.4rem 0; font-size: 0.9rem;
+}
+.preview-row + .preview-row { border-top: 1px solid rgba(255,255,255,0.06); }
+.preview-label { color: var(--text-muted, #94a3b8); }
+.preview-value { font-weight: 700; color: var(--text-color, #fff); }
+.preview-value.accent { color: var(--branch-primary, #f97316); }
+</style>
+<div class="card" style="max-width:650px;">
     <div class="card-header"><i class="fas fa-clipboard-list"></i> {{ title }}</div>
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="purchaseForm">
             {% csrf_token %}
             {% for field in form %}
             <div class="form-group">
@@ -15,6 +34,27 @@
                 {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
             </div>
             {% endfor %}
+
+            <div class="preview-box" id="previewBox">
+                <h4 style="margin:0 0 0.75rem 0;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#94a3b8);">Conversion Preview</h4>
+                <div class="preview-row">
+                    <span class="preview-label">Warehouse Display</span>
+                    <span class="preview-value accent" id="previewWarehouse">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Sales/POS Equivalent</span>
+                    <span class="preview-value" id="previewSelling">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Buying Price</span>
+                    <span class="preview-value" id="previewBuyingPrice">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Total Stock Value</span>
+                    <span class="preview-value" id="previewTotalValue">—</span>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Record Purchase</button>
                 <a href="{% url 'suppliers:purchase_list' %}" class="btn btn-outline">Cancel</a>
@@ -22,4 +62,90 @@
         </form>
     </div>
 </div>
+
+{% load static %}
+<script>
+var products = {};
+{% for p in products %}
+products[{{ p.id }}] = {
+    name: '{{ p.name|escapejs }}',
+    unitType: '{{ p.unit_type }}',
+    warehouseUnit: '{{ p.warehouse_unit_type }}',
+    warehouseLabel: '{{ p.warehouse_unit_label }}',
+    sellingLabel: '{{ p.selling_unit_label }}',
+    packSize: {{ p.pack_size|default:6 }},
+    crateSize: {{ p.crate_size|default:20 }},
+    litersPerUnit: {{ p.liters_per_unit|default:5 }},
+    glassesPerLiter: {{ p.glasses_per_liter|default:28 }},
+    conversionRate: {{ p.conversion_rate|default:1 }}
+};
+{% endfor %}
+
+function getProductId() {
+    var sel = document.getElementById('id_product');
+    return sel ? parseInt(sel.value) : null;
+}
+
+function getUnitType() {
+    var sel = document.getElementById('id_warehouse_unit_type');
+    return sel ? sel.value : null;
+}
+
+function getQty() {
+    var inp = document.getElementById('id_quantity');
+    return inp ? parseInt(inp.value) || 0 : 0;
+}
+
+function getPrice() {
+    var inp = document.getElementById('id_unit_price');
+    return inp ? parseFloat(inp.value) || 0 : 0;
+}
+
+function convertToSelling(product, qty) {
+    if (!product) return 0;
+    if (product.conversionRate) {
+        return qty * product.conversionRate;
+    }
+    if (product.unitType === 'Crate') {
+        return qty * product.crateSize;
+    }
+    if (product.unitType === 'Pack') {
+        return qty * product.packSize;
+    }
+    return qty;
+}
+
+function updatePreview() {
+    var pid = getProductId();
+    var p = products[pid];
+    var box = document.getElementById('previewBox');
+    if (!p) {
+        box.classList.remove('active');
+        return;
+    }
+    var qty = getQty();
+    var price = getPrice();
+    var unitType = getUnitType();
+
+    // Auto-set unit type
+    var unitSel = document.getElementById('id_warehouse_unit_type');
+    if (unitSel && unitSel.value !== p.warehouseUnit) {
+        unitSel.value = p.warehouseUnit;
+    }
+
+    var sellingQty = convertToSelling(p, qty);
+    var totalValue = sellingQty * price;
+
+    document.getElementById('previewWarehouse').textContent = qty + ' ' + p.warehouseLabel;
+    document.getElementById('previewSelling').textContent = sellingQty + ' ' + p.sellingLabel;
+    document.getElementById('previewBuyingPrice').textContent = 'MK ' + Math.round(price).toLocaleString('en-US');
+    document.getElementById('previewTotalValue').textContent = 'MK ' + Math.round(totalValue).toLocaleString('en-US');
+    box.classList.add('active');
+}
+
+document.getElementById('id_product').addEventListener('change', updatePreview);
+document.getElementById('id_quantity').addEventListener('input', updatePreview);
+document.getElementById('id_unit_price').addEventListener('input', updatePreview);
+updatePreview();
+</script>
 {% endblock %}

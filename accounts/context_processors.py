@@ -4,7 +4,9 @@ from inventory.models import Product
 
 def notification_count(request):
     if request.user.is_authenticated:
-        low_stock_count = Product.objects.filter(quantity__lte=models.F('reorder_level')).count()
+        low_stock_count = Product.objects.filter(
+            quantity__lte=models.F('reorder_level')
+        ).count()
     else:
         low_stock_count = 0
     return {
