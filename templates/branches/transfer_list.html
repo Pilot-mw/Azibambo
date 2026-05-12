@@ -45,7 +45,7 @@
                         <td><span class="badge badge-secondary">{{ t.from_branch.branch_code }}</span> {{ t.from_branch.branch_name }}</td>
                         <td><span class="badge badge-info">{{ t.to_branch.branch_code }}</span> {{ t.to_branch.branch_name }}</td>
                         <td>{{ t.product.name }}</td>
-                        <td>{{ t.quantity }}</td>
+                        <td>{{ t.warehouse_quantity }} {{ t.product.warehouse_unit_label }}</td>
                         <td>
                             {% if t.status == 'pending' %}<span class="badge badge-warning">Pending{% elif t.status == 'approved' %}<span class="badge badge-info">Approved{% elif t.status == 'rejected' %}<span class="badge badge-danger">Rejected{% elif t.status == 'completed' %}<span class="badge badge-success">Completed{% endif %}</span>
                         </td>

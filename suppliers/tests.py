@@ -173,15 +173,14 @@ class EndToEndSmokeTest(TestCase):
         defaults.update(kw)
         return Product.objects.create(**defaults)
 
-    def _purchase(self, product, qty, unit_type, price=5000):
+    def _purchase(self, product, qty, unit_type, price=5000, paid=0):
         return self.client.post(reverse('suppliers:purchase_add'), {
             'supplier': self.supplier.id,
             'product': product.id,
             'warehouse_unit_type': unit_type,
             'quantity': qty,
             'unit_price': str(price),
-            'total_amount': str(price * qty),
-            'paid_amount': '0',
+            'paid_amount': str(paid),
             'date': '2026-05-12',
         })
 
@@ -328,3 +327,59 @@ class EndToEndSmokeTest(TestCase):
 
         sheet.refresh_from_db()
         self.assertEqual(sheet.order_stock, orig_order)
+
+    def test_purchase_auto_calculates_total_and_remaining(self):
+        product = self._create_product(
+            name='Finance Test', unit_type='Bottle',
+            bottle_quantity=0, selling_price=1000,
+        )
+        self._purchase(product, qty=10, unit_type='Bottle', price=5000, paid=20000)
+        purchase = Purchase.objects.last()
+        self.assertEqual(float(purchase.total_amount), 50000)
+        self.assertEqual(float(purchase.remaining_amount), 30000)
+        self.assertEqual(purchase.payment_status, 'partial')
+
+    def test_purchase_paid_in_full(self):
+        product = self._create_product(
+            name='Paid Test', unit_type='Bottle',
+            bottle_quantity=0, selling_price=1000,
+        )
+        self._purchase(product, qty=5, unit_type='Bottle', price=2000, paid=10000)
+        purchase = Purchase.objects.last()
+        self.assertEqual(float(purchase.total_amount), 10000)
+        self.assertEqual(float(purchase.remaining_amount), 0)
+        self.assertEqual(purchase.payment_status, 'paid')
+
+    def test_purchase_unpaid_creates_expense_loan(self):
+        product = self._create_product(
+            name='Loan Test', unit_type='Bottle',
+            bottle_quantity=0, selling_price=1000,
+        )
+        self._purchase(product, qty=3, unit_type='Bottle', price=4000, paid=0)
+        purchase = Purchase.objects.last()
+        self.assertEqual(purchase.payment_status, 'unpaid')
+        self.assertEqual(float(purchase.remaining_amount), 12000)
+        self.assertIsNotNone(purchase.linked_expense)
+        self.assertEqual(float(purchase.linked_expense.amount), 12000)
+        self.assertEqual(purchase.linked_expense.category.name, 'Supplier Loan')
+
+    def test_purchase_partial_creates_expense_loan(self):
+        product = self._create_product(
+            name='Partial Loan', unit_type='Bottle',
+            bottle_quantity=0, selling_price=1000,
+        )
+        self._purchase(product, qty=4, unit_type='Bottle', price=3000, paid=5000)
+        purchase = Purchase.objects.last()
+        self.assertEqual(purchase.payment_status, 'partial')
+        self.assertEqual(float(purchase.remaining_amount), 7000)
+        self.assertIsNotNone(purchase.linked_expense)
+        self.assertEqual(float(purchase.linked_expense.amount), 7000)
+
+    def test_purchase_stock_updates_even_when_unpaid(self):
+        product = self._create_product(
+            name='Stock Despite Debt', unit_type='Bottle',
+            bottle_quantity=0, selling_price=1000,
+        )
+        self._purchase(product, qty=5, unit_type='Bottle', price=2000, paid=0)
+        product.refresh_from_db()
+        self.assertEqual(product.bottle_quantity, 5)

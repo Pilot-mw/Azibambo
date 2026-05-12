@@ -221,6 +221,9 @@ def transfer_add(request):
         if form.is_valid():
             transfer = form.save(commit=False)
             transfer.requested_by = request.user
+            # Convert warehouse units to base units for correct stock math
+            if transfer.product:
+                transfer.quantity = transfer.product.convert_purchase_to_base(transfer.quantity)
             transfer.save()
             ActivityLog.objects.create(
                 user=request.user,

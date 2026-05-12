@@ -8,6 +8,7 @@ from datetime import timedelta, datetime
 from inventory.models import Product, Category, StockSheet
 from sales.models import Sale, SaleItem
 from expenses.models import Expense
+from suppliers.models import Purchase, Supplier
 from branches.models import Branch
 from django.db.models.functions import TruncDate
 
@@ -136,6 +137,22 @@ def index(request):
             })
         branch_revenues.sort(key=lambda x: x['revenue'], reverse=True)
 
+    # Supplier outstanding balances
+    supplier_debts = Purchase.objects.filter(
+        payment_status__in=['partial', 'unpaid'], **branch_filter
+    ).values('supplier__name').annotate(
+        total_remaining=Sum('remaining_amount'),
+        purchase_count=Count('id'),
+    ).order_by('-total_remaining')
+
+    total_supplier_debt = Purchase.objects.filter(
+        payment_status__in=['partial', 'unpaid'], **branch_filter
+    ).aggregate(total=Sum('remaining_amount'))['total'] or 0
+
+    recent_loans = Expense.objects.filter(
+        category__name='Supplier Loan', **branch_filter
+    ).select_related('purchase', 'purchase__supplier').order_by('-date')[:5]
+
     context = {
         'daily_sales': daily_sales['total'] or 0,
         'daily_sales_count': daily_sales['count'] or 0,
@@ -157,5 +174,8 @@ def index(request):
         'ss_best_items': best_stock_items,
         'branch_revenues': branch_revenues,
         'current_branch': current_branch,
+        'supplier_debts': supplier_debts,
+        'total_supplier_debt': total_supplier_debt,
+        'recent_loans': recent_loans,
     }
     return render(request, 'dashboard/index.html', context)

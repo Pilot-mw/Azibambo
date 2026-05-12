@@ -194,8 +194,40 @@ body { background: var(--ss-bg); }
     box-shadow: 0 0 18px var(--btn-glow);
 }
 
+.toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+    padding: 14px 20px; border-radius: 10px; font-size: 0.85rem;
+    font-weight: 600; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s ease-out;
+    max-width: 400px;
+}
+.toast-success { background: #16a34a; }
+.toast-error { background: #dc2626; }
+.toast-info { background: #2563eb; }
+.toast .close-toast { margin-left: auto; cursor: pointer; opacity: 0.7; font-size: 1.1rem; }
+.toast .close-toast:hover { opacity: 1; }
+@keyframes toastIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.btn-ss.loading {
+    pointer-events: none; opacity: 0.7;
+}
+.btn-ss.loading .btn-text { display: none; }
+.btn-ss.loading .btn-loading { display: inline-flex; }
+.btn-ss .btn-loading { display: none; align-items: center; gap: 6px; }
+.ss-row.saved td { position: relative; }
+.ss-row.saved td:first-child::before {
+    content: ''; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 20px; background: #22c55e; border-radius: 2px;
+}
+
 @media print {
-    .sidebar, .navbar, .ss-toolbar, .pill-group, .page-header, .ss-info-bar { display: none !important; }
+    .sidebar, .navbar, .ss-toolbar, .pill-group, .page-header, .ss-info-bar, .toast-container { display: none !important; }
     .page-content { padding: 0 !important; background: #fff !important; }
     .ss-table th, .ss-table td { color: #000 !important; background: #fff !important; }
     .ss-input { border: none !important; background: transparent !important; color: #000 !important; }
@@ -241,7 +273,14 @@ body { background: var(--ss-bg); }
                 <span style="color:var(--ss-text-muted);font-size:0.78rem;" id="itemCount">{{ rows|length }} items</span>
             </div>
             <div class="ss-toolbar-right">
-                <button class="btn-ss btn-ss-primary" id="transferAllBtn"><i class="fas fa-exchange-alt"></i> Transfer All</button>
+                <button class="btn-ss btn-ss-success" id="saveAllBtn">
+                    <span class="btn-text"><i class="fas fa-save"></i> Save All</span>
+                    <span class="btn-loading"><i class="fas fa-spinner fa-spin"></i> Saving...</span>
+                </button>
+                <button class="btn-ss btn-ss-primary" id="transferAllBtn">
+                    <span class="btn-text"><i class="fas fa-exchange-alt"></i> Transfer All</span>
+                    <span class="btn-loading"><i class="fas fa-spinner fa-spin"></i> Transferring...</span>
+                </button>
                 <button class="btn-ss btn-ss-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                 <button class="btn-ss btn-ss-secondary" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
                 <button class="btn-ss btn-ss-secondary" id="exportExcelBtn"><i class="fas fa-file-excel"></i> Excel</button>
@@ -338,6 +377,7 @@ body { background: var(--ss-bg); }
 
     </div>
 </div>
+<div class="toast-container" id="toastContainer"></div>
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -399,6 +439,30 @@ function recalcFooter() {
     document.getElementById('footerRemain').textContent = fmt(totalRemain);
 }
 
+function showToast(message, type) {
+    type = type || 'success';
+    var container = document.getElementById('toastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    var icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    toast.innerHTML = '<i class="fas ' + (icons[type] || icons.success) + '"></i> ' + message +
+        '<span class="close-toast" onclick="this.parentElement.remove()">&times;</span>';
+    container.appendChild(toast);
+    setTimeout(function() { if (toast.parentElement) toast.remove(); }, 4000);
+}
+
+function setButtonLoading(btnId, loading) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (loading) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+    } else {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
+
 function setSaveStatus(type, msg) {
     var el = document.getElementById('saveStatus');
     el.className = 'save-status ' + type;
@@ -406,80 +470,142 @@ function setSaveStatus(type, msg) {
     el.innerHTML = (icons[type] || icons.saved) + ' ' + msg;
 }
 
-function transferAllRows() {
-    if (!selectedBranchId) {
-        setSaveStatus('error', 'Please select transfer destination');
-        return;
-    }
+function getRowData(row) {
+    var itemId = row.dataset.itemId;
+    if (!itemId) return null;
+    return {
+        item_id: parseInt(itemId),
+        open_stock: parseInt(row.querySelector('.field-open').value) || 0,
+        order_stock: parseInt(row.querySelector('.field-order').value) || 0,
+        moved_stock: parseInt(row.querySelector('.field-moved').value) || 0,
+        buying_price: parseFloat(row.querySelector('.field-buying-price').value) || 0,
+        selling_price: parseFloat(row.querySelector('.field-selling-price').value) || 0,
+    };
+}
 
+function postRow(data, transferToId) {
+    if (transferToId) data.transfer_to_branch_id = transferToId;
+    data.date = document.getElementById('datePicker').value;
+    return fetch('{% url "inventory:stock_sheet_save" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+}
+
+function saveAllRows() {
     var rows = document.querySelectorAll('#sheetBody .ss-row');
-    var hasMoved = false;
-    var hasError = false;
-    var date = document.getElementById('datePicker').value;
     var promises = [];
+    var hasChanges = false;
 
-    setSaveStatus('saving', 'Transferring...');
+    setButtonLoading('saveAllBtn', true);
+    setSaveStatus('saving', 'Saving...');
 
     rows.forEach(function(row) {
-        var itemId = row.dataset.itemId;
-        if (!itemId) return;
-
-        var open_stock = parseInt(row.querySelector('.field-open').value) || 0;
-        var order_stock = parseInt(row.querySelector('.field-order').value) || 0;
-        var moved_stock = parseInt(row.querySelector('.field-moved').value) || 0;
-        var buying_price = parseFloat(row.querySelector('.field-buying-price').value) || 0;
-        var selling_price = parseFloat(row.querySelector('.field-selling-price').value) || 0;
-
-        if (moved_stock > 0) hasMoved = true;
-        if (moved_stock > (open_stock + order_stock)) hasError = true;
-
-        var data = {
-            item_id: parseInt(itemId),
-            open_stock: open_stock,
-            order_stock: order_stock,
-            moved_stock: moved_stock,
-            buying_price: buying_price,
-            selling_price: selling_price,
-            transfer_to_branch_id: selectedBranchId,
-            date: date,
-        };
-
+        var data = getRowData(row);
+        if (!data) return;
+        hasChanges = true;
         promises.push(
-            fetch('{% url "inventory:stock_sheet_save" %}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify(data)
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(resp) {
+            postRow(data, null).then(function(resp) {
                 if (resp.success) {
                     row.dataset.id = resp.id;
-                    row.querySelector('.calc-total').value = resp.total_stock;
-                    row.querySelector('.calc-remain').value = resp.remaining_stock;
+                    row.classList.add('saved');
+                    updateRowFromResponse(row, resp);
                 } else {
-                    throw new Error(resp.error || 'Save failed');
+                    throw new Error(resp.error || 'Save failed for ' + (row.dataset.itemName || 'item'));
                 }
+            }).catch(function(err) {
+                console.error(err);
+                row.classList.add('has-error');
             })
-            .catch(function(err) { console.error(err); })
         );
     });
 
-    if (hasError) {
-        setSaveStatus('error', 'MOVED exceeds TOTAL for some items');
-        return;
-    }
-
-    if (!hasMoved) {
-        setSaveStatus('error', 'No MOVED quantities to transfer');
+    if (!hasChanges) {
+        setButtonLoading('saveAllBtn', false);
+        showToast('No data to save', 'info');
+        setSaveStatus('saved', 'No changes');
         return;
     }
 
     Promise.all(promises).then(function() {
         recalcFooter();
-        setSaveStatus('saved', 'Transferred to ' + selectedBranchName + ' successfully');
+        setButtonLoading('saveAllBtn', false);
+        setSaveStatus('saved', 'All rows saved successfully');
+        showToast('All rows saved successfully', 'success');
     }).catch(function() {
-        setSaveStatus('error', 'Some items failed to transfer');
+        setButtonLoading('saveAllBtn', false);
+        setSaveStatus('error', 'Some rows failed to save');
+        showToast('Some rows failed to save', 'error');
     });
+}
+
+function transferAllRows() {
+    if (!selectedBranchId) {
+        showToast('Please select a transfer destination branch', 'error');
+        return;
+    }
+
+    var rows = document.querySelectorAll('#sheetBody .ss-row');
+    var promises = [];
+    var hasMoved = false;
+    var hasError = false;
+
+    rows.forEach(function(row) {
+        var data = getRowData(row);
+        if (!data) return;
+        if (data.moved_stock > 0) hasMoved = true;
+        if (data.moved_stock > (data.open_stock + data.order_stock)) hasError = true;
+    });
+
+    if (hasError) {
+        showToast('MOVED exceeds TOTAL for some items. Fix errors first.', 'error');
+        return;
+    }
+    if (!hasMoved) {
+        showToast('No MOVED quantities to transfer', 'info');
+        return;
+    }
+
+    setButtonLoading('transferAllBtn', true);
+    setSaveStatus('saving', 'Transferring...');
+
+    rows.forEach(function(row) {
+        var data = getRowData(row);
+        if (!data || data.moved_stock === 0) return;
+        promises.push(
+            postRow(data, selectedBranchId).then(function(resp) {
+                if (resp.success) {
+                    row.dataset.id = resp.id;
+                    row.classList.add('saved');
+                    updateRowFromResponse(row, resp);
+                } else {
+                    throw new Error(resp.error || 'Transfer failed for ' + (row.dataset.itemName || 'item'));
+                }
+            }).catch(function(err) {
+                console.error(err);
+                row.classList.add('has-error');
+            })
+        );
+    });
+
+    Promise.all(promises).then(function() {
+        recalcFooter();
+        setButtonLoading('transferAllBtn', false);
+        setSaveStatus('saved', 'Transferred to ' + selectedBranchName + ' successfully');
+        showToast('Transferred to ' + selectedBranchName + ' successfully', 'success');
+    }).catch(function() {
+        setButtonLoading('transferAllBtn', false);
+        setSaveStatus('error', 'Some items failed to transfer');
+        showToast('Some items failed to transfer', 'error');
+    });
+}
+
+function updateRowFromResponse(row, resp) {
+    if (resp.total_wh !== undefined) {
+        row.querySelector('.calc-total').value = resp.total_wh;
+        row.querySelector('.calc-remain').value = resp.remain_wh;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -494,6 +620,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('transferStatus').style.color = '#4ade80';
         });
     });
+
+    // Save All button
+    document.getElementById('saveAllBtn').addEventListener('click', saveAllRows);
 
     // Transfer All button
     document.getElementById('transferAllBtn').addEventListener('click', transferAllRows);
@@ -561,11 +690,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('itemCount').textContent = visible + ' items';
     }
 
-    // Inline editing for live calculation only (no auto-save)
+    // Inline editing for live calculation (no auto-save)
     document.querySelectorAll('.ss-row .editable').forEach(function(input) {
         input.addEventListener('input', function() {
             var row = this.closest('.ss-row');
             if (!row) return;
+            row.classList.remove('saved', 'has-error');
             recalcRow(row);
             recalcFooter();
         });

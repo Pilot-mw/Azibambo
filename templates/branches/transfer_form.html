@@ -15,6 +15,9 @@
                 <div class="form-group">
                     <label>{{ field.label }}</label>
                     {{ field }}
+                    {% if field.name == 'quantity' %}
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Enter quantity in warehouse units (Crates/Packs/Bottles/Containers)</small>
+                    {% endif %}
                     {% if field.errors %}
                     <div class="form-error">{{ field.errors.0 }}</div>
                     {% endif %}

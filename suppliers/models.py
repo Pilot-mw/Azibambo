@@ -26,6 +26,13 @@ WAREHOUSE_UNIT_CHOICES = [
 ]
 
 
+PAYMENT_STATUS_CHOICES = [
+    ('paid', 'PAID'),
+    ('partial', 'PARTIAL / CREDIT'),
+    ('unpaid', 'UNPAID'),
+]
+
+
 class Purchase(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, related_name='purchases')
     product = models.ForeignKey('inventory.Product', on_delete=models.SET_NULL, null=True)
@@ -33,8 +40,11 @@ class Purchase(models.Model):
     quantity = models.PositiveIntegerField(help_text='Quantity in warehouse units (crates/packs/bottles/containers)')
     converted_quantity = models.PositiveIntegerField(default=0, editable=False, help_text='Auto-converted to base stock units')
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, editable=False, help_text='Auto-calculated: unit_price × quantity')
     paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    remaining_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, editable=False)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid', editable=False)
+    linked_expense = models.ForeignKey('expenses.Expense', on_delete=models.SET_NULL, null=True, blank=True, related_name='purchase_loans')
     notes = models.TextField(blank=True)
     purchased_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='purchases')
@@ -49,7 +59,13 @@ class Purchase(models.Model):
 
     @property
     def balance(self):
-        return self.total_amount - self.paid_amount
+        return self.remaining_amount
+
+    @property
+    def paid_percentage(self):
+        if self.total_amount == 0:
+            return 0
+        return int((float(self.paid_amount) / float(self.total_amount)) * 100)
 
     @property
     def warehouse_display(self):

@@ -221,8 +221,53 @@
 </div>
 {% endif %}
 {% if sales_data %}
-<div class="card">
-    <div class="card-header"><i class="fas fa-chart-line"></i> 30-Day Sales Trend</div>
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-hand-holding-usd" style="color:var(--warning,#eab308);"></i> Supplier Outstanding Balances</span>
+            <a href="{% url 'suppliers:purchase_list' %}" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin:0 0 0.75rem 0;">
+                <div class="stat-info"><h3 style="color:var(--danger,#ef4444);">{{ site_settings.currency }} {{ total_supplier_debt|floatformat:0 }}</h3><p>Total Outstanding</p></div>
+                <div class="stat-info"><h3>{{ supplier_debts|length }}</h3><p>Suppliers with Debt</p></div>
+            </div>
+            {% if supplier_debts %}
+            <table>
+                <thead><tr><th>Supplier</th><th>Outstanding</th><th>Purchases</th></tr></thead>
+                <tbody>
+                {% for debt in supplier_debts %}
+                <tr>
+                    <td>{{ debt.supplier__name }}</td>
+                    <td><span style="color:var(--danger,#ef4444);font-weight:600;">{{ site_settings.currency }} {{ debt.total_remaining|floatformat:0 }}</span></td>
+                    <td>{{ debt.purchase_count }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No outstanding supplier debts.</p>
+            {% endif %}
+            {% if recent_loans %}
+            <details style="margin-top:0.75rem;">
+                <summary style="cursor:pointer;font-size:0.85rem;color:var(--text-muted,#94a3b8);">Recently Added Loans</summary>
+                <table style="margin-top:0.5rem;">
+                    <thead><tr><th>Supplier</th><th>Amount</th><th>Date</th></tr></thead>
+                    <tbody>
+                    {% for loan in recent_loans %}
+                    <tr>
+                        <td>{{ loan.purchase.supplier.name|default:'—' }}</td>
+                        <td><span style="color:var(--warning,#eab308);font-weight:600;">{{ site_settings.currency }} {{ loan.amount|floatformat:0 }}</span></td>
+                        <td>{{ loan.date|date:'d M' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-chart-line"></i> 30-Day Sales Trend</div>
     <div class="card-body">
         <div class="chart-container">
             <canvas id="salesChart"></canvas>

@@ -9,9 +9,7 @@
     border-radius: 10px;
     padding: 1rem;
     margin-top: 1rem;
-    display: none;
 }
-.preview-box.active { display: block; }
 .preview-row {
     display: flex; justify-content: space-between;
     padding: 0.4rem 0; font-size: 0.9rem;
@@ -20,23 +18,105 @@
 .preview-label { color: var(--text-muted, #94a3b8); }
 .preview-value { font-weight: 700; color: var(--text-color, #fff); }
 .preview-value.accent { color: var(--branch-primary, #f97316); }
+.finance-display {
+    background: var(--card-bg, #1e293b);
+    border: 1px solid var(--border-color, #2d3a4a);
+    border-radius: 10px;
+    padding: 1rem;
+}
+.finance-row {
+    display: flex; justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+.finance-row + .finance-row { border-top: 1px solid rgba(255,255,255,0.06); }
+.finance-label { color: var(--text-muted, #94a3b8); font-size: 0.85rem; }
+.finance-value { font-weight: 700; font-size: 1rem; }
+.finance-value.total { color: var(--branch-primary, #f97316); font-size: 1.3rem; }
+.finance-value.remaining { font-size: 1.3rem; }
+.finance-value.remaining.positive { color: var(--danger, #ef4444); }
+.finance-value.remaining.zero { color: var(--success, #22c55e); }
 </style>
-<div class="card" style="max-width:650px;">
+<div class="card" style="max-width:700px;">
     <div class="card-header"><i class="fas fa-clipboard-list"></i> {{ title }}</div>
     <div class="card-body">
         <form method="post" id="purchaseForm">
             {% csrf_token %}
-            {% for field in form %}
+
             <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
-                {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                {{ form.supplier.label_tag }}
+                {{ form.supplier }}
             </div>
-            {% endfor %}
+
+            <div class="form-group">
+                {{ form.product.label_tag }}
+                {{ form.product }}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <div class="form-group">
+                    {{ form.warehouse_unit_type.label_tag }}
+                    {{ form.warehouse_unit_type }}
+                </div>
+                <div class="form-group">
+                    {{ form.date.label_tag }}
+                    {{ form.date }}
+                </div>
+            </div>
+
+            <hr style="border-color:var(--border-color,#2d3a4a);margin:1rem 0;">
+
+            <h4 style="margin:0 0 0.75rem 0;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#94a3b8);">
+                <i class="fas fa-shopping-cart"></i> Purchase Details
+            </h4>
+
+            <div class="form-group">
+                {{ form.quantity.label_tag }}
+                {{ form.quantity }}
+                <div class="help-text" id="qtyUnitHelp">Quantity in warehouse units</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <div class="form-group">
+                    {{ form.unit_price.label_tag }}
+                    {{ form.unit_price }}
+                </div>
+                <div class="form-group">
+                    {{ form.paid_amount.label_tag }}
+                    {{ form.paid_amount }}
+                </div>
+            </div>
+
+            <div class="finance-display" style="margin-top:0.75rem;">
+                <div class="finance-row">
+                    <span class="finance-label">Total Amount</span>
+                    <span class="finance-value total" id="displayTotal">MK 0</span>
+                </div>
+                <div class="finance-row">
+                    <span class="finance-label">Amount Paid</span>
+                    <span class="finance-value" id="displayPaid">MK 0</span>
+                </div>
+                <div class="finance-row">
+                    <span class="finance-label">Remaining Balance</span>
+                    <span class="finance-value remaining zero" id="displayRemaining">MK 0</span>
+                </div>
+                <div class="finance-row">
+                    <span class="finance-label">Payment Status</span>
+                    <span class="finance-value" id="displayStatus"><span class="badge badge-secondary">—</span></span>
+                </div>
+            </div>
+
+            <hr style="border-color:var(--border-color,#2d3a4a);margin:1rem 0;">
+
+            <div class="form-group">
+                {{ form.notes.label_tag }}
+                {{ form.notes }}
+            </div>
 
             <div class="preview-box" id="previewBox">
-                <h4 style="margin:0 0 0.75rem 0;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#94a3b8);">Conversion Preview</h4>
+                <h4 style="margin:0 0 0.75rem 0;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#94a3b8);">
+                    <i class="fas fa-exchange-alt"></i> Conversion Preview
+                </h4>
                 <div class="preview-row">
                     <span class="preview-label">Warehouse Display</span>
                     <span class="preview-value accent" id="previewWarehouse">—</span>
@@ -46,16 +126,12 @@
                     <span class="preview-value" id="previewSelling">—</span>
                 </div>
                 <div class="preview-row">
-                    <span class="preview-label">Buying Price</span>
-                    <span class="preview-value" id="previewBuyingPrice">—</span>
-                </div>
-                <div class="preview-row">
-                    <span class="preview-label">Total Stock Value</span>
+                    <span class="preview-label">Stock Value Added</span>
                     <span class="preview-value" id="previewTotalValue">—</span>
                 </div>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions" style="margin-top:1rem;">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Record Purchase</button>
                 <a href="{% url 'suppliers:purchase_list' %}" class="btn btn-outline">Cancel</a>
             </div>
@@ -86,11 +162,6 @@ function getProductId() {
     return sel ? parseInt(sel.value) : null;
 }
 
-function getUnitType() {
-    var sel = document.getElementById('id_warehouse_unit_type');
-    return sel ? sel.value : null;
-}
-
 function getQty() {
     var inp = document.getElementById('id_quantity');
     return inp ? parseInt(inp.value) || 0 : 0;
@@ -99,6 +170,23 @@ function getQty() {
 function getPrice() {
     var inp = document.getElementById('id_unit_price');
     return inp ? parseFloat(inp.value) || 0 : 0;
+}
+
+function getPaid() {
+    var inp = document.getElementById('id_paid_amount');
+    return inp ? parseFloat(inp.value) || 0 : 0;
+}
+
+function fmtMoney(v) {
+    return 'MK ' + Math.round(v).toLocaleString('en-US');
+}
+
+function getPaymentStatus(total, paid) {
+    if (total <= 0 && paid <= 0) return { label: '—', cls: 'badge-secondary' };
+    var remaining = total - paid;
+    if (remaining <= 0) return { label: 'PAID', cls: 'badge-success' };
+    if (paid <= 0) return { label: 'UNPAID', cls: 'badge-danger' };
+    return { label: 'PARTIAL / CREDIT', cls: 'badge-warning' };
 }
 
 function convertToSelling(product, qty) {
@@ -115,17 +203,31 @@ function convertToSelling(product, qty) {
     return qty;
 }
 
-function updatePreview() {
+function updateFinance() {
     var pid = getProductId();
     var p = products[pid];
-    var box = document.getElementById('previewBox');
-    if (!p) {
-        box.classList.remove('active');
-        return;
-    }
+
     var qty = getQty();
     var price = getPrice();
-    var unitType = getUnitType();
+    var paid = getPaid();
+    var totalAmount = qty * price;
+    var remaining = Math.max(0, totalAmount - paid);
+    var status = getPaymentStatus(totalAmount, paid);
+
+    document.getElementById('displayTotal').textContent = fmtMoney(totalAmount);
+    document.getElementById('displayPaid').textContent = fmtMoney(paid);
+    var remEl = document.getElementById('displayRemaining');
+    remEl.textContent = fmtMoney(remaining);
+    remEl.className = 'finance-value remaining ' + (remaining > 0 ? 'positive' : 'zero');
+    document.getElementById('displayStatus').innerHTML = '<span class="badge ' + status.cls + '">' + status.label + '</span>';
+
+    // Update preview
+    var box = document.getElementById('previewBox');
+    if (!p) {
+        box.style.display = 'none';
+        return;
+    }
+    box.style.display = 'block';
 
     // Auto-set unit type
     var unitSel = document.getElementById('id_warehouse_unit_type');
@@ -138,14 +240,13 @@ function updatePreview() {
 
     document.getElementById('previewWarehouse').textContent = qty + ' ' + p.warehouseLabel;
     document.getElementById('previewSelling').textContent = sellingQty + ' ' + p.sellingLabel;
-    document.getElementById('previewBuyingPrice').textContent = 'MK ' + Math.round(price).toLocaleString('en-US');
-    document.getElementById('previewTotalValue').textContent = 'MK ' + Math.round(totalValue).toLocaleString('en-US');
-    box.classList.add('active');
+    document.getElementById('previewTotalValue').textContent = fmtMoney(totalValue);
 }
 
-document.getElementById('id_product').addEventListener('change', updatePreview);
-document.getElementById('id_quantity').addEventListener('input', updatePreview);
-document.getElementById('id_unit_price').addEventListener('input', updatePreview);
-updatePreview();
+document.getElementById('id_product').addEventListener('change', updateFinance);
+document.getElementById('id_quantity').addEventListener('input', updateFinance);
+document.getElementById('id_unit_price').addEventListener('input', updateFinance);
+document.getElementById('id_paid_amount').addEventListener('input', updateFinance);
+updateFinance();
 </script>
 {% endblock %}

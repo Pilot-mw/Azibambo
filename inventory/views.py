@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from .models import Product, Category, StockSheet, SalesSheet
 from .forms import ProductForm, CategoryForm, StockSheetForm
-from .services.conversion_engine import get_selling_unit_label, get_purchase_unit_label
+from .services.conversion_engine import get_selling_unit_label, get_purchase_unit_label, get_conversion_rate, convert_base_to_warehouse
 from accounts.decorators import role_required
 from accounts.models import ActivityLog
 from branches.models import Branch, StockTransfer
@@ -215,12 +215,26 @@ def stock_sheet(request):
     totals = {'open': 0, 'order': 0, 'total': 0, 'buying_value': 0, 'selling_value': 0, 'moved': 0, 'remain': 0}
 
     for product in products:
+        rate = get_conversion_rate(product) or 1
         sheet = existing_sheets.get(product.id)
         if sheet:
-            rows.append(sheet)
+            wh = lambda v: v // rate
+            rows.append({
+                'id': sheet.id,
+                'item': sheet.item,
+                'category': sheet.category,
+                'open_stock': wh(sheet.open_stock),
+                'order_stock': wh(sheet.order_stock),
+                'total_stock': wh(sheet.total_stock),
+                'buying_price': sheet.buying_price,
+                'selling_price': sheet.selling_price,
+                'moved_stock': wh(sheet.moved_stock),
+                'remaining_stock': wh(sheet.remaining_stock),
+                'date': sheet.date,
+            })
         else:
             prev_sheet = prev_sheets.get(product.id)
-            open_val = prev_sheet.remaining_stock if prev_sheet else product.quantity
+            open_val = (prev_sheet.remaining_stock if prev_sheet else product.quantity) // rate
             rows.append({
                 'id': None,
                 'item': product,
@@ -236,11 +250,11 @@ def stock_sheet(request):
             })
 
     for r in rows:
-        o = r.open_stock if hasattr(r, 'open_stock') else r.get('open_stock', 0)
-        od = r.order_stock if hasattr(r, 'order_stock') else r.get('order_stock', 0)
-        bp = float(r.buying_price if hasattr(r, 'buying_price') else r.get('buying_price', 0))
-        sp = float(r.selling_price if hasattr(r, 'selling_price') else r.get('selling_price', 0))
-        mv = r.moved_stock if hasattr(r, 'moved_stock') else r.get('moved_stock', 0)
+        o = r.get('open_stock', 0)
+        od = r.get('order_stock', 0)
+        bp = float(r.get('buying_price', 0))
+        sp = float(r.get('selling_price', 0))
+        mv = r.get('moved_stock', 0)
         t = o + od
         rm = t - mv
         totals['open'] += o
@@ -278,22 +292,28 @@ def stock_sheet_save(request):
 
         data = json.loads(request.body)
         item_id = data.get('item_id')
-        open_stock = int(data.get('open_stock', 0))
-        order_stock = int(data.get('order_stock', 0))
-        moved_stock = int(data.get('moved_stock', 0))
+        open_wh = int(data.get('open_stock', 0))
+        order_wh = int(data.get('order_stock', 0))
+        moved_wh = int(data.get('moved_stock', 0))
         buying_price = float(data.get('buying_price', 0))
         selling_price = float(data.get('selling_price', 0))
         sheet_date = data.get('date', datetime.date.today().isoformat())
         transfer_to_id = data.get('transfer_to_branch_id')
 
-        if moved_stock > (open_stock + order_stock):
+        if moved_wh > (open_wh + order_wh):
             return JsonResponse({'success': False, 'error': 'MOVED cannot exceed TOTAL'}, status=400)
-        if open_stock < 0 or order_stock < 0 or moved_stock < 0 or buying_price < 0 or selling_price < 0:
+        if open_wh < 0 or order_wh < 0 or moved_wh < 0 or buying_price < 0 or selling_price < 0:
             return JsonResponse({'success': False, 'error': 'Negative values not allowed'}, status=400)
 
         item = get_object_or_404(Product, pk=item_id) if item_id else None
         if not item:
             return JsonResponse({'success': False, 'error': 'Item required'}, status=400)
+
+        # Convert warehouse units to base units for DB storage
+        rate = get_conversion_rate(item) or 1
+        open_stock = open_wh * rate
+        order_stock = order_wh * rate
+        moved_stock = moved_wh * rate
 
         sheet, created = StockSheet.objects.get_or_create(
             item=item,
@@ -345,8 +365,12 @@ def stock_sheet_save(request):
         return JsonResponse({
             'success': True,
             'id': sheet.id,
-            'total_stock': total,
-            'remaining_stock': sheet.remaining_stock,
+            'total_wh': total // rate,
+            'remain_wh': sheet.remaining_stock // rate,
+            'open_wh': open_wh,
+            'order_wh': order_wh,
+            'moved_wh': moved_wh,
+            'item_id': item.id,
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)

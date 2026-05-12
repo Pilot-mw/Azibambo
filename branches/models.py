@@ -75,3 +75,8 @@ class StockTransfer(models.Model):
 
     def __str__(self):
         return f"Transfer {self.product.name}: {self.from_branch.branch_code} -> {self.to_branch.branch_code}"
+
+    @property
+    def warehouse_quantity(self):
+        wh, _ = self.product.convert_base_to_warehouse(self.quantity)
+        return wh

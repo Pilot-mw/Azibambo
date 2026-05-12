@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from .models import Supplier, Purchase
 from .forms import SupplierForm, PurchaseForm
 from inventory.models import Product
+from expenses.models import Expense, ExpenseCategory
 from accounts.decorators import role_required
 from accounts.models import ActivityLog
 
@@ -100,10 +101,23 @@ def purchase_add(request):
             purchase.purchased_by = request.user
             purchase.branch = getattr(request, 'current_branch', None)
 
+            # Auto-calculate finance fields
             product = purchase.product
+            purchase.total_amount = purchase.unit_price * purchase.quantity
+            purchase.remaining_amount = purchase.total_amount - purchase.paid_amount
+
+            if purchase.remaining_amount <= 0:
+                purchase.payment_status = 'paid'
+            elif purchase.paid_amount == 0:
+                purchase.payment_status = 'unpaid'
+            else:
+                purchase.payment_status = 'partial'
+
+            # Convert warehouse qty to base stock
             purchase.converted_quantity = product.convert_purchase_to_base(purchase.quantity)
             purchase.save()
 
+            # Update product stock & buying price
             product.bottle_quantity += purchase.converted_quantity
             product.buying_price = purchase.unit_price
             product.save()
@@ -132,12 +146,36 @@ def purchase_add(request):
                     }
                 )
 
+            # Create Expense/Loan record if remaining > 0
+            if purchase.remaining_amount > 0:
+                loan_cat, _ = ExpenseCategory.objects.get_or_create(name='Supplier Loan')
+                expense = Expense.objects.create(
+                    category=loan_cat,
+                    title=f'Supplier Loan — {purchase.supplier.name} ({purchase.product.name})',
+                    description=f'Auto-generated loan from purchase #{purchase.id} — {purchase.warehouse_display} = {purchase.selling_display}',
+                    amount=purchase.remaining_amount,
+                    paid_by=request.user,
+                    branch=warehouse or purchase.branch,
+                    purchase=purchase,
+                    is_paid=False,
+                    payment_status='unpaid',
+                    date=today,
+                )
+                purchase.linked_expense = expense
+                purchase.save(update_fields=['linked_expense'])
+
+            # Update supplier outstanding balance
             supplier = purchase.supplier
             if supplier:
-                supplier.outstanding_balance += purchase.balance
+                supplier.outstanding_balance += purchase.remaining_amount
                 supplier.save()
 
-            messages.success(request, f'Purchase recorded! {purchase.warehouse_display} → {purchase.selling_display}')
+            messages.success(
+                request,
+                f'Purchase recorded! {purchase.warehouse_display} → {purchase.selling_display} | '
+                f'Status: {purchase.get_payment_status_display()} | '
+                f'Remaining: MK {purchase.remaining_amount:,.0f}'
+            )
             return redirect('suppliers:purchase_list')
     else:
         form = PurchaseForm()

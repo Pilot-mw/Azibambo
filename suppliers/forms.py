@@ -19,15 +19,14 @@ class SupplierForm(forms.ModelForm):
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
-        fields = ['supplier', 'product', 'warehouse_unit_type', 'quantity', 'unit_price', 'total_amount', 'paid_amount', 'notes', 'date']
+        fields = ['supplier', 'product', 'warehouse_unit_type', 'quantity', 'unit_price', 'paid_amount', 'notes', 'date']
         widgets = {
             'supplier': forms.Select(attrs={'class': 'form-input'}),
             'product': forms.Select(attrs={'class': 'form-input', 'id': 'id_product'}),
             'warehouse_unit_type': forms.Select(attrs={'class': 'form-input', 'id': 'id_warehouse_unit_type'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-input', 'id': 'id_quantity', 'min': '1'}),
             'unit_price': forms.NumberInput(attrs={'class': 'form-input', 'id': 'id_unit_price', 'step': '0.01'}),
-            'total_amount': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
-            'paid_amount': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
+            'paid_amount': forms.NumberInput(attrs={'class': 'form-input', 'id': 'id_paid_amount', 'step': '0.01'}),
             'notes': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
             'date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
         }
